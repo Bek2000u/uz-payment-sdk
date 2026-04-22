@@ -1,5 +1,6 @@
 import {
   NormalizedPaymentStatus,
+  PaymentMetadata,
   PaymentProviderId,
   PaymentResult,
 } from '../types/payment.types';
@@ -84,7 +85,10 @@ export const firstDefined = <T>(...values: Array<T | undefined | null>): T | und
   return values.find(value => value !== undefined && value !== null);
 };
 
-export const buildPaymentResult = ({
+export function buildPaymentResult<
+  TProvider extends PaymentProviderId,
+  TRaw = unknown,
+>({
   provider,
   transactionId,
   status,
@@ -92,19 +96,31 @@ export const buildPaymentResult = ({
   amount,
   currency,
   orderId,
+  providerInvoiceId,
+  providerPaymentId,
+  checkoutReference,
+  providerStatus,
+  expiresAt,
+  metadata,
   message,
   raw,
 }: {
-  provider: PaymentProviderId;
+  provider: TProvider;
   transactionId: string;
   status: unknown;
   paymentUrl?: string;
   amount?: number;
   currency?: string;
   orderId?: string;
+  providerInvoiceId?: string;
+  providerPaymentId?: string;
+  checkoutReference?: string;
+  providerStatus?: string;
+  expiresAt?: string;
+  metadata?: PaymentMetadata;
   message?: string;
-  raw?: any;
-}): PaymentResult => {
+  raw?: TRaw;
+}): PaymentResult<TRaw, TProvider> {
   return {
     success: true,
     provider,
@@ -114,7 +130,13 @@ export const buildPaymentResult = ({
     amount,
     currency,
     orderId,
+    providerInvoiceId,
+    providerPaymentId,
+    checkoutReference,
+    providerStatus,
+    expiresAt,
+    metadata,
     message,
     raw,
   };
-};
+}

@@ -9,8 +9,13 @@ export interface PaymeReceipt {
   id?: string;
   state?: number;
   amount?: ProviderAmount;
+  create_time?: number;
+  pay_time?: number;
+  cancel_time?: number;
+  currency?: number;
   description?: string;
   detail?: Record<string, unknown> | null;
+  meta?: Record<string, unknown> | null;
   account?: PaymeAccountRef | Array<{ name: string; value: string }>;
   payer?: {
     phone?: string;
@@ -41,6 +46,24 @@ export interface PaymeJsonRpcErrorResponse {
   jsonrpc?: '2.0';
   id?: number | string | null;
   error: PaymeJsonRpcErrorPayload;
+}
+
+export interface PaymeMerchantApiRequest {
+  jsonrpc?: '2.0';
+  id?: number | string | null;
+  method:
+    | 'CheckPerformTransaction'
+    | 'CreateTransaction'
+    | 'PerformTransaction'
+    | 'CancelTransaction'
+    | 'CheckTransaction';
+  params: {
+    id?: string;
+    time?: number;
+    amount?: ProviderAmount;
+    account?: Record<string, unknown>;
+    reason?: number;
+  };
 }
 
 export type PaymeJsonRpcResponse<TResult> =

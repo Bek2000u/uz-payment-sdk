@@ -1,16 +1,15 @@
 import axios from 'axios';
+import * as crypto from 'crypto';
 import { MemoryCacheStore } from '../cache/cache-store';
 import { WebhookService } from './webhook.service';
 
-jest.mock('axios');
-
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-
 describe('WebhookService', () => {
   let service: WebhookService;
+  let postSpy: jest.SpiedFunction<typeof axios.post>;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    postSpy = jest.spyOn(axios, 'post');
 
     service = new WebhookService({
       cacheStore: new MemoryCacheStore(),
@@ -41,7 +40,7 @@ describe('WebhookService', () => {
   });
 
   it('uses idempotency reservation before processing', async () => {
-    mockedAxios.post.mockResolvedValue({ data: { ok: true } } as never);
+    postSpy.mockResolvedValue({ data: { ok: true } } as never);
 
     await service.processWebhook({
       provider: 'click',
@@ -57,7 +56,7 @@ describe('WebhookService', () => {
   });
 
   it('skips duplicate events already reserved in cache', async () => {
-    mockedAxios.post.mockResolvedValue({ data: { ok: true } } as never);
+    postSpy.mockResolvedValue({ data: { ok: true } } as never);
 
     const payload = {
       provider: 'payme',
@@ -72,11 +71,11 @@ describe('WebhookService', () => {
     await service.processWebhook(payload);
 
     expect(service.getWebhookEvents()).toHaveLength(1);
-    expect(mockedAxios.post).toHaveBeenCalledTimes(1);
+    expect(postSpy).toHaveBeenCalledTimes(1);
   });
 
   it('forwards normalized enterprise webhook envelope using generic forwarding config', async () => {
-    mockedAxios.post.mockResolvedValue({ data: { ok: true } } as never);
+    postSpy.mockResolvedValue({ data: { ok: true } } as never);
 
     await service.processWebhook({
       provider: 'uzum',
@@ -87,7 +86,7 @@ describe('WebhookService', () => {
       timestamp: '2026-04-15T10:00:00.000Z',
     });
 
-    expect(mockedAxios.post).toHaveBeenCalledWith(
+    expect(postSpy).toHaveBeenCalledWith(
       'https://hooks.example.test/payments/webhook',
       expect.objectContaining({
         source: 'my-sdk',
@@ -99,6 +98,73 @@ describe('WebhookService', () => {
           'X-MySDK-Provider': 'uzum',
           'X-MySDK-Event-Type': 'payment.cancelled',
         }),
+      }),
+    );
+  });
+
+  it('parses Click raw webhook into canonical payload', () => {
+    const payload = {
+      click_trans_id: 'click-payment-1',
+      service_id: '101202',
+      merchant_trans_id: 'order-1',
+      amount: '125000',
+      action: '1',
+      sign_time: '1710000000',
+      merchant_prepare_id: 'invoice-7',
+    };
+    const signString = crypto
+      .createHash('md5')
+      .update(
+        `${payload.click_trans_id}${payload.service_id}click-secret${payload.merchant_trans_id}${payload.merchant_prepare_id}${payload.amount}${payload.action}${payload.sign_time}`,
+      )
+      .digest('hex');
+
+    const parsed = service.parseClickWebhook({
+      ...payload,
+      sign_string: signString,
+    });
+
+    expect(parsed).toEqual(
+      expect.objectContaining({
+        provider: 'click',
+        transactionId: 'invoice-7',
+        orderId: 'order-1',
+        amount: 1250,
+        status: 'success',
+        providerInvoiceId: 'invoice-7',
+        providerPaymentId: 'click-payment-1',
+        providerStatus: '1',
+      }),
+    );
+  });
+
+  it('parses Payme raw webhook into canonical payload', () => {
+    const payload = {
+      jsonrpc: '2.0' as const,
+      id: 42,
+      method: 'PerformTransaction' as const,
+      params: {
+        id: 'payme-transaction-1',
+        time: 1710000000000,
+        amount: 500000,
+        account: {
+          order_id: 'order-77',
+        },
+      },
+    };
+    const authorization = `Basic ${Buffer.from('merchant-login:payme-secret').toString('base64')}`;
+
+    const parsed = service.parsePaymeWebhook(payload, authorization);
+
+    expect(parsed).toEqual(
+      expect.objectContaining({
+        provider: 'payme',
+        transactionId: 'payme-transaction-1',
+        orderId: 'order-77',
+        amount: 5000,
+        status: 'success',
+        providerPaymentId: 'payme-transaction-1',
+        providerStatus: 'PerformTransaction',
       }),
     );
   });

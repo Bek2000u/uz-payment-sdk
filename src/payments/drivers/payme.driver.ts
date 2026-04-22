@@ -1,10 +1,9 @@
-import { PaymentDriver } from '../interfaces/payment-driver.interface';
+import type { PaymentDriver } from '../interfaces/payment-driver.interface';
 import { PaymentConfigService } from '../../config/payment-config.service';
 import { buildPaymentResult, firstDefined } from '../utils/normalizers.util';
 import { postJson } from '../utils/http-client.util';
 import {
   GenerateInvoiceParams,
-  PaymentResult,
 } from '../types/payment.types';
 import {
   generateBasicAuthHeader,
@@ -21,18 +20,27 @@ import {
   PaymeGetCardVerifyCodeRequest,
   PaymeJsonRpcResponse,
   PaymeJsonRpcSuccess,
-  PaymePaymentResult,
   PaymePayReceiptRequest,
   PaymeReceipt,
   PaymeReceiptEnvelope,
   PaymeReceiptLookupRequest,
+  PaymePaymentResult,
   PaymeSendReceiptRequest,
   PaymeSendReceiptResult,
   PaymeSetReceiptFiscalDataRequest,
   PaymeVerifyCardRequest,
 } from '../types/payme.types';
 
-export class PaymeDriver implements PaymentDriver {
+export class PaymeDriver
+  implements
+    PaymentDriver<
+      PaymeCreateReceiptRequest,
+      PaymeReceiptLookupRequest,
+      PaymeReceiptLookupRequest,
+      GenerateInvoiceParams,
+      PaymePaymentResult
+    >
+{
   constructor(private readonly configService: PaymentConfigService) {}
 
   private ensurePaymeSuccess<TResult>(
@@ -82,24 +90,28 @@ export class PaymeDriver implements PaymentDriver {
 
   async createPayment(
     data: PaymeCreateReceiptRequest,
-  ): Promise<PaymentResult> {
+  ): Promise<PaymePaymentResult> {
     const { orderId, amount } = data;
     const response = await this.createReceipt(data);
     const receipt = response.result.receipt;
+    const providerPaymentId =
+      firstDefined(receipt?._id, receipt?.id, orderId) || orderId;
+
     return buildPaymentResult({
       provider: 'payme',
-      transactionId:
-        firstDefined(
-          receipt?._id,
-          receipt?.id,
-          orderId,
-        ) || orderId,
+      transactionId: providerPaymentId,
       status: firstDefined(
         receipt?.state,
         0,
       ),
       amount,
       orderId,
+      providerPaymentId,
+      providerInvoiceId: providerPaymentId,
+      checkoutReference: providerPaymentId,
+      providerStatus:
+        receipt?.state !== undefined ? String(receipt.state) : undefined,
+      metadata: receipt?.meta || receipt?.detail || undefined,
       message: receipt?.description,
       raw: response,
     });
@@ -115,15 +127,23 @@ export class PaymeDriver implements PaymentDriver {
 
   async checkPayment(
     data: PaymeReceiptLookupRequest,
-  ): Promise<PaymentResult> {
+  ): Promise<PaymePaymentResult> {
     const { transactionId } = data;
     const response = await this.checkReceipt(data);
+    const receipt = response?.result?.receipt;
     return buildPaymentResult({
       provider: 'payme',
       transactionId,
-      status: firstDefined(response?.result?.state, response?.result?.receipt?.state),
-      orderId: this.extractOrderId(response?.result?.receipt),
-      amount: fromProviderAmount(response?.result?.receipt?.amount),
+      status: firstDefined(response?.result?.state, receipt?.state),
+      orderId: this.extractOrderId(receipt),
+      amount: fromProviderAmount(receipt?.amount),
+      providerPaymentId: transactionId,
+      providerInvoiceId: transactionId,
+      providerStatus:
+        firstDefined(response?.result?.state, receipt?.state) !== undefined
+          ? String(firstDefined(response?.result?.state, receipt?.state))
+          : undefined,
+      metadata: receipt?.meta || receipt?.detail || undefined,
       raw: response,
     });
   }
@@ -138,18 +158,25 @@ export class PaymeDriver implements PaymentDriver {
 
   async cancelReceipt(
     data: PaymeReceiptLookupRequest,
-  ): Promise<PaymentResult> {
+  ): Promise<PaymePaymentResult> {
     const response = await this.call<PaymeReceiptEnvelope>('receipts.cancel', {
       id: data.transactionId,
     });
     const receipt = response.result.receipt;
+    const providerPaymentId =
+      firstDefined(receipt?._id, receipt?.id, data.transactionId) || data.transactionId;
 
     return buildPaymentResult({
       provider: 'payme',
-      transactionId: firstDefined(receipt?._id, receipt?.id, data.transactionId) || data.transactionId,
+      transactionId: providerPaymentId,
       status: firstDefined(receipt?.state, 21),
       amount: fromProviderAmount(receipt?.amount),
       orderId: this.extractOrderId(receipt),
+      providerPaymentId,
+      providerInvoiceId: providerPaymentId,
+      providerStatus:
+        receipt?.state !== undefined ? String(receipt.state) : undefined,
+      metadata: receipt?.meta || receipt?.detail || undefined,
       message: receipt?.description,
       raw: response,
     });
@@ -166,7 +193,7 @@ export class PaymeDriver implements PaymentDriver {
 
   async payReceipt(
     data: PaymePayReceiptRequest,
-  ): Promise<PaymentResult> {
+  ): Promise<PaymePaymentResult> {
     const response = await this.call<PaymeReceiptEnvelope>('receipts.pay', {
       id: data.transactionId,
       token: data.token,
@@ -174,14 +201,20 @@ export class PaymeDriver implements PaymentDriver {
       ...(data.hold !== undefined ? { hold: data.hold } : {}),
     });
     const receipt = response.result.receipt;
+    const providerPaymentId =
+      firstDefined(receipt?._id, receipt?.id, data.transactionId) || data.transactionId;
 
     return buildPaymentResult({
       provider: 'payme',
-      transactionId:
-        firstDefined(receipt?._id, receipt?.id, data.transactionId) || data.transactionId,
+      transactionId: providerPaymentId,
       status: receipt?.state,
       amount: fromProviderAmount(receipt?.amount),
       orderId: this.extractOrderId(receipt),
+      providerPaymentId,
+      providerInvoiceId: providerPaymentId,
+      providerStatus:
+        receipt?.state !== undefined ? String(receipt.state) : undefined,
+      metadata: receipt?.meta || receipt?.detail || undefined,
       message: receipt?.description,
       raw: response,
     });
@@ -238,7 +271,7 @@ export class PaymeDriver implements PaymentDriver {
 
   async cancelPayment(
     data: PaymeReceiptLookupRequest,
-  ): Promise<PaymentResult> {
+  ): Promise<PaymePaymentResult> {
     return this.cancelReceipt(data);
   }
 

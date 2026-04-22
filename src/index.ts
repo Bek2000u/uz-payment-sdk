@@ -41,6 +41,7 @@ export type {
   GenerateInvoiceParams,
   MinorUnitAmount,
   PaymentAmount,
+  PaymentMetadata,
   ProviderAmount,
   PaymentProviderId,
   NormalizedPaymentStatus,
@@ -51,6 +52,7 @@ export { PAYMENT_PROVIDERS } from './payments/types/payment.types';
 export type {
   ClickCancelPaymentRequest,
   ClickCheckInvoiceRequest,
+  ClickCheckRequest,
   ClickCheckPaymentByMerchantTransIdRequest,
   ClickCheckPaymentRequest,
   ClickCreateInvoiceRequest,
@@ -58,6 +60,7 @@ export type {
   ClickFiscalDataResponse,
   ClickFiscalItem,
   ClickInvoiceStatusResponse,
+  ClickWebhookPayload,
   ClickPaymentReversalResponse,
   ClickPaymentResult,
   ClickPaymentStatusResponse,
@@ -72,6 +75,7 @@ export type {
   PaymeGetCardVerifyCodeRequest,
   PaymeJsonRpcErrorPayload,
   PaymeJsonRpcErrorResponse,
+  PaymeMerchantApiRequest,
   PaymeJsonRpcResponse,
   PaymeJsonRpcSuccess,
   PaymePayReceiptRequest,
@@ -88,6 +92,8 @@ export type {
 } from './payments/types/payme.types';
 export type {
   UzumApiResponse,
+  UzumCancelPaymentRequest,
+  UzumCheckPaymentRequest,
   UzumGetOperationStateRequest,
   UzumGetOrderStatusRequest,
   UzumGetReceiptsRequest,
@@ -111,7 +117,10 @@ export type {
   EnterpriseWebhookEnvelope,
   WebhookEvent,
 } from './webhooks/webhook.service';
-export type { WebhookPayload } from './webhooks/webhook.types';
+export type {
+  SupportedRawWebhookPayload,
+  WebhookPayload,
+} from './webhooks/webhook.types';
 export type {
   UzumMerchantAuthConfig,
 } from './webhooks/uzum-merchant-webhook';

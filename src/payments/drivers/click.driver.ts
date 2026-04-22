@@ -1,30 +1,43 @@
-import { PaymentDriver } from '../interfaces/payment-driver.interface';
+import type { PaymentDriver } from '../interfaces/payment-driver.interface';
 import { PaymentConfigService } from '../../config/payment-config.service';
 import * as crypto from 'crypto';
 import { buildPaymentResult } from '../utils/normalizers.util';
 import { deleteJson, getJson, postJson } from '../utils/http-client.util';
 import {
   ClickGenerateInvoiceParams,
-  PaymentResult,
 } from '../types/payment.types';
 import { generateClickMerchantAuthHeader } from '../utils/signer.util';
 import { ClickError } from '../../errors/ClickError';
 import { generateClickInvoiceUrl } from '../utils/invoice.util';
 import { toProviderAmount } from '../utils/amount.util';
 import {
+  ClickApiResponseBase,
   ClickCancelPaymentRequest,
+  ClickCheckRequest,
   ClickCreateInvoiceRequest,
   ClickCreateInvoiceResponse,
   ClickFiscalDataResponse,
   ClickInvoiceStatusResponse,
+  ClickPaymentResult,
   ClickPaymentStatusResponse,
   ClickPaymentReversalResponse,
   ClickSubmitFiscalItemsRequest,
   ClickSubmitFiscalQrCodeRequest,
 } from '../types/click.types';
 
-export class ClickDriver implements PaymentDriver {
-  private config: any;
+type ClickConfig = PaymentConfigService['clickConfig'];
+
+export class ClickDriver
+  implements
+    PaymentDriver<
+      ClickCreateInvoiceRequest,
+      ClickCheckRequest,
+      ClickCancelPaymentRequest,
+      ClickGenerateInvoiceParams,
+      ClickPaymentResult
+    >
+{
+  private readonly config: ClickConfig;
 
   constructor(private readonly configService: PaymentConfigService) {
     this.config = this.configService.clickConfig;
@@ -70,7 +83,7 @@ export class ClickDriver implements PaymentDriver {
     return 'unknown';
   }
 
-  private ensureClickSuccess(response: any): void {
+  private ensureClickSuccess(response: ClickApiResponseBase): void {
     if (typeof response?.error_code === 'number' && response.error_code < 0) {
       throw new ClickError(
         response.error_note || 'Click API request failed',
@@ -129,15 +142,20 @@ export class ClickDriver implements PaymentDriver {
 
   async createPayment(
     data: ClickCreateInvoiceRequest,
-  ): Promise<PaymentResult> {
+  ): Promise<ClickPaymentResult> {
     const { orderId, amount } = data;
     const response = await this.createInvoice(data);
+    const providerInvoiceId = String(response.invoice_id || orderId);
+
     return buildPaymentResult({
       provider: 'click',
-      transactionId: String(response.invoice_id || orderId),
+      transactionId: providerInvoiceId,
       status: 'pending',
       amount,
       orderId,
+      providerInvoiceId,
+      checkoutReference: providerInvoiceId,
+      providerStatus: 'invoice_created',
       message: response.error_note,
       raw: response,
     });
@@ -189,20 +207,30 @@ export class ClickDriver implements PaymentDriver {
     return response;
   }
 
-  async checkPayment(data: any): Promise<PaymentResult> {
-    const paymentId = data.paymentId;
-    const invoiceId = data.invoiceId || (!paymentId ? data.transactionId : undefined);
+  async checkPayment(data: ClickCheckRequest): Promise<ClickPaymentResult> {
+    const paymentId = 'paymentId' in data ? data.paymentId : undefined;
+    const invoiceId =
+      'invoiceId' in data || 'transactionId' in data
+        ? ('invoiceId' in data ? data.invoiceId : undefined) ||
+          (!paymentId && 'transactionId' in data ? data.transactionId : undefined)
+        : undefined;
 
     if (paymentId) {
       const response = await this.checkPaymentStatus({ paymentId: String(paymentId) });
+      const providerPaymentId = String(response.payment_id || paymentId);
       return buildPaymentResult({
         provider: 'click',
-        transactionId: String(response.payment_id || paymentId),
+        transactionId: providerPaymentId,
         status: this.mapClickMerchantStatus(
           response.payment_status,
           response.error_code,
         ),
-        orderId: data.orderId,
+        orderId: response.merchant_trans_id || data.orderId,
+        providerPaymentId,
+        providerStatus:
+          response.payment_status !== undefined
+            ? String(response.payment_status)
+            : undefined,
         message: response.error_note,
         raw: response,
       });
@@ -210,32 +238,48 @@ export class ClickDriver implements PaymentDriver {
 
     if (invoiceId) {
       const response = await this.checkInvoice({ invoiceId: String(invoiceId) });
+      const providerInvoiceId = String(invoiceId);
       return buildPaymentResult({
         provider: 'click',
-        transactionId: String(invoiceId),
+        transactionId: providerInvoiceId,
         status: this.mapClickInvoiceStatus(
           response.invoice_status,
           response.error_code,
         ),
-        orderId: data.orderId,
+        orderId: 'orderId' in data ? data.orderId : undefined,
+        providerInvoiceId,
+        checkoutReference: providerInvoiceId,
+        providerStatus:
+          response.invoice_status !== undefined
+            ? String(response.invoice_status)
+            : undefined,
         message: response.invoice_status_note || response.error_note,
         raw: response,
       });
     }
 
-    if (data.orderId && data.paymentDate) {
+    if ('orderId' in data && 'paymentDate' in data && data.orderId && data.paymentDate) {
       const response = await this.checkPaymentStatusByMerchantTransId({
         orderId: String(data.orderId),
         paymentDate: String(data.paymentDate),
       });
+      const providerPaymentId = String(response.payment_id || data.orderId);
       return buildPaymentResult({
         provider: 'click',
-        transactionId: String(response.payment_id || data.orderId),
+        transactionId: providerPaymentId,
         status: this.mapClickMerchantStatus(
           response.payment_status,
           response.error_code,
         ),
         orderId: data.orderId,
+        providerPaymentId,
+        providerStatus:
+          response.payment_status !== undefined
+            ? String(response.payment_status)
+            : undefined,
+        metadata: {
+          paymentDate: data.paymentDate,
+        },
         message: response.error_note,
         raw: response,
       });
@@ -248,7 +292,7 @@ export class ClickDriver implements PaymentDriver {
 
   async cancelPayment(
     data: ClickCancelPaymentRequest,
-  ): Promise<PaymentResult> {
+  ): Promise<ClickPaymentResult> {
     const timestampSec = Math.floor(Date.now() / 1000);
     const response = await deleteJson<ClickPaymentReversalResponse>(
       `${this.config.apiUrl}/payment/reversal/${this.config.serviceId}/${data.paymentId}`,
@@ -263,6 +307,8 @@ export class ClickDriver implements PaymentDriver {
       transactionId: String(response.payment_id || data.paymentId),
       status: 'cancelled',
       orderId: data.orderId,
+      providerPaymentId: String(response.payment_id || data.paymentId),
+      providerStatus: 'reversed',
       message: response.error_note,
       raw: response,
     });
@@ -329,7 +375,10 @@ export class ClickDriver implements PaymentDriver {
     );
   }
 
-  validateShopApiSignature(payload: any, signature: string): boolean {
+  validateShopApiSignature(
+    payload: Record<string, string | number | undefined>,
+    signature: string,
+  ): boolean {
     const isPrepare = Number(payload.action) === 0;
     const material = isPrepare
       ? `${payload.click_trans_id}${payload.service_id}${this.config.secretKey}${payload.merchant_trans_id}${payload.amount}${payload.action}${payload.sign_time}`

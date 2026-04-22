@@ -17,10 +17,13 @@ import {
 } from './types/payment.types';
 import {
   ClickCancelPaymentRequest,
+  ClickCheckInvoiceRequest,
+  ClickCheckRequest,
   ClickCheckPaymentByMerchantTransIdRequest,
   ClickCheckPaymentRequest,
   ClickCreateInvoiceRequest,
   ClickFiscalDataResponse,
+  ClickPaymentResult,
   ClickSubmitFiscalItemsRequest,
   ClickSubmitFiscalQrCodeRequest,
 } from './types/click.types';
@@ -30,15 +33,19 @@ import {
   PaymeCreateReceiptRequest,
   PaymeGetCardVerifyCodeRequest,
   PaymePayReceiptRequest,
+  PaymePaymentResult,
   PaymeReceiptLookupRequest,
   PaymeSendReceiptRequest,
   PaymeSetReceiptFiscalDataRequest,
   PaymeVerifyCardRequest,
 } from './types/payme.types';
 import {
+  UzumCancelPaymentRequest,
+  UzumCheckPaymentRequest,
   UzumGetReceiptsRequest,
   UzumMerchantPayRequest,
   UzumOperationCommand,
+  UzumPaymentResult,
   UzumPurchaseReceiptRequest,
   UzumRegisterPaymentRequest,
 } from './types/uzum.types';
@@ -94,32 +101,37 @@ export class PaymentsService {
 
   async createClickInvoice(
     data: ClickCreateInvoiceRequest,
-  ): Promise<PaymentResult> {
-    return this.create('click', data as unknown as Record<string, unknown>);
+  ): Promise<ClickPaymentResult> {
+    this.configService.assertProviderCredentials('click');
+    return this.clickDriver.createPayment(data);
   }
 
   async checkClickInvoice(
-    data: { invoiceId?: string; transactionId?: string; orderId?: string },
-  ): Promise<PaymentResult> {
-    return this.check('click', data as unknown as Record<string, unknown>);
+    data: ClickCheckInvoiceRequest,
+  ): Promise<ClickPaymentResult> {
+    this.configService.assertProviderCredentials('click');
+    return this.clickDriver.checkPayment(data);
   }
 
   async checkClickPayment(
     data: ClickCheckPaymentRequest,
-  ): Promise<PaymentResult> {
-    return this.check('click', data as unknown as Record<string, unknown>);
+  ): Promise<ClickPaymentResult> {
+    this.configService.assertProviderCredentials('click');
+    return this.clickDriver.checkPayment(data);
   }
 
   async checkClickPaymentByOrder(
     data: ClickCheckPaymentByMerchantTransIdRequest,
-  ): Promise<PaymentResult> {
-    return this.check('click', data as unknown as Record<string, unknown>);
+  ): Promise<ClickPaymentResult> {
+    this.configService.assertProviderCredentials('click');
+    return this.clickDriver.checkPayment(data);
   }
 
   async cancelClickPayment(
     data: ClickCancelPaymentRequest,
-  ): Promise<PaymentResult> {
-    return this.cancel('click', data as unknown as Record<string, unknown>);
+  ): Promise<ClickPaymentResult> {
+    this.configService.assertProviderCredentials('click');
+    return this.clickDriver.cancelPayment(data);
   }
 
   async submitClickFiscalItems(data: ClickSubmitFiscalItemsRequest) {
@@ -139,20 +151,23 @@ export class PaymentsService {
 
   async createPaymeReceipt(
     data: PaymeCreateReceiptRequest,
-  ): Promise<PaymentResult> {
-    return this.create('payme', data as unknown as Record<string, unknown>);
+  ): Promise<PaymePaymentResult> {
+    this.configService.assertProviderCredentials('payme');
+    return this.paymeDriver.createPayment(data);
   }
 
   async checkPaymeReceipt(
     data: PaymeReceiptLookupRequest,
-  ): Promise<PaymentResult> {
-    return this.check('payme', data as unknown as Record<string, unknown>);
+  ): Promise<PaymePaymentResult> {
+    this.configService.assertProviderCredentials('payme');
+    return this.paymeDriver.checkPayment(data);
   }
 
   async cancelPaymeReceipt(
     data: PaymeReceiptLookupRequest,
-  ): Promise<PaymentResult> {
-    return this.cancel('payme', data as unknown as Record<string, unknown>);
+  ): Promise<PaymePaymentResult> {
+    this.configService.assertProviderCredentials('payme');
+    return this.paymeDriver.cancelPayment(data);
   }
 
   async getPaymeReceipt(data: PaymeReceiptLookupRequest) {
@@ -167,7 +182,7 @@ export class PaymentsService {
 
   async payPaymeReceipt(
     data: PaymePayReceiptRequest,
-  ): Promise<PaymentResult> {
+  ): Promise<PaymePaymentResult> {
     this.configService.assertProviderCredentials('payme');
     return this.paymeDriver.payReceipt(data);
   }
@@ -199,26 +214,28 @@ export class PaymentsService {
 
   async registerUzumPayment(
     data: UzumRegisterPaymentRequest,
-  ): Promise<PaymentResult> {
-    return this.create('uzum', data as unknown as Record<string, unknown>);
+  ): Promise<UzumPaymentResult> {
+    this.configService.assertProviderCredentials('uzum');
+    return this.uzumDriver.createPayment(data);
   }
 
   async completeUzumPayment(
     data: UzumOperationCommand,
-  ): Promise<PaymentResult> {
+  ): Promise<UzumPaymentResult> {
     this.configService.assertProviderCredentials('uzum');
     return this.uzumDriver.completePayment(data);
   }
 
   async reverseUzumPayment(
     data: UzumOperationCommand,
-  ): Promise<PaymentResult> {
-    return this.cancel('uzum', data as unknown as Record<string, unknown>);
+  ): Promise<UzumPaymentResult> {
+    this.configService.assertProviderCredentials('uzum');
+    return this.uzumDriver.cancelPayment(data);
   }
 
   async refundUzumPayment(
     data: UzumOperationCommand,
-  ): Promise<PaymentResult> {
+  ): Promise<UzumPaymentResult> {
     this.configService.assertProviderCredentials('uzum');
     return this.uzumDriver.refundPayment(data);
   }
@@ -389,19 +406,14 @@ export class PaymentsService {
         return operation === 'create'
           ? this.clickDriver.createPayment(data as unknown as ClickCreateInvoiceRequest)
           : operation === 'check'
-            ? this.clickDriver.checkPayment(data)
+            ? this.clickDriver.checkPayment(data as unknown as ClickCheckRequest)
             : this.clickDriver.cancelPayment(data as unknown as ClickCancelPaymentRequest);
       case 'uzum':
         return operation === 'create'
           ? this.uzumDriver.createPayment(data as unknown as UzumRegisterPaymentRequest)
           : operation === 'check'
-            ? this.uzumDriver.checkPayment(data)
-            : this.uzumDriver.cancelPayment(data as unknown as {
-                orderId?: string;
-                transactionId?: string;
-                amount: number;
-                operationId?: string;
-              });
+            ? this.uzumDriver.checkPayment(data as unknown as UzumCheckPaymentRequest)
+            : this.uzumDriver.cancelPayment(data as unknown as UzumCancelPaymentRequest);
       default:
         throw new Error(`Qo'llab-quvvatlanmaydigan provider: ${provider}`);
     }

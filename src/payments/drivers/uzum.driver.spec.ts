@@ -2,15 +2,13 @@ import axios from 'axios';
 import { PaymentConfigService } from '../../config/payment-config.service';
 import { UzumDriver } from './uzum.driver';
 
-jest.mock('axios');
-
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-
 describe('UzumDriver', () => {
   let driver: UzumDriver;
+  let requestSpy: jest.SpiedFunction<typeof axios.request>;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    requestSpy = jest.spyOn(axios, 'request');
 
     driver = new UzumDriver({
       uzumConfig: {
@@ -28,7 +26,7 @@ describe('UzumDriver', () => {
   });
 
   it('registers payment via official Checkout API contract', async () => {
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         errorCode: 0,
         message: 'ok',
@@ -46,7 +44,7 @@ describe('UzumDriver', () => {
       phoneNumber: '998901234567',
     });
 
-    expect(mockedAxios.request).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
         url: 'https://developer.uzumbank.uz/api/v1/payment/register',
@@ -77,10 +75,14 @@ describe('UzumDriver', () => {
     expect(result.status).toBe('pending');
     expect(result.paymentUrl).toBe('https://checkout.uzum.test/pay/order-1');
     expect(result.amount).toBe(1500);
+    expect(result.providerPaymentId).toBe('fb584fdb-48d4-4b50-a7da-f15b9a7ef111');
+    expect(result.checkoutReference).toBe('fb584fdb-48d4-4b50-a7da-f15b9a7ef111');
+    expect(result.providerStatus).toBe('REGISTERED');
+    expect(typeof result.expiresAt).toBe('string');
   });
 
   it('checks payment via getOrderStatus first', async () => {
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         errorCode: 0,
         message: 'ok',
@@ -108,7 +110,7 @@ describe('UzumDriver', () => {
       transactionId: 'order-1',
     });
 
-    expect(mockedAxios.request).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
         url: 'https://developer.uzumbank.uz/api/v1/payment/getOrderStatus',
@@ -119,10 +121,12 @@ describe('UzumDriver', () => {
     expect(result.orderId).toBe('order-1');
     expect(result.status).toBe('pending');
     expect(result.amount).toBe(1500);
+    expect(result.providerPaymentId).toBe('operation-1');
+    expect(result.providerStatus).toBe('REGISTERED');
   });
 
   it('checks operation state when operation id is provided', async () => {
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         errorCode: 0,
         message: 'ok',
@@ -139,7 +143,7 @@ describe('UzumDriver', () => {
       operationId: 'operation-2',
     });
 
-    expect(mockedAxios.request).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
         url: 'https://developer.uzumbank.uz/api/v1/payment/getOperationState',
@@ -147,10 +151,12 @@ describe('UzumDriver', () => {
       }),
     );
     expect(result.status).toBe('success');
+    expect(result.providerPaymentId).toBe('operation-2');
+    expect(result.providerStatus).toBe('SUCCESS');
   });
 
   it('requests reverse with X-Operation-Id idempotency header', async () => {
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         errorCode: 0,
         message: 'ok',
@@ -166,7 +172,7 @@ describe('UzumDriver', () => {
       operationId: '00000000-0000-4000-8000-000000000001',
     });
 
-    expect(mockedAxios.request).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
         url: 'https://developer.uzumbank.uz/api/v1/acquiring/reverse',
@@ -182,5 +188,7 @@ describe('UzumDriver', () => {
     expect(result.status).toBe('cancelled');
     expect(result.transactionId).toBe('refund-operation-1');
     expect(result.amount).toBe(1500);
+    expect(result.providerPaymentId).toBe('refund-operation-1');
+    expect(result.providerStatus).toBe('REVERSED');
   });
 });

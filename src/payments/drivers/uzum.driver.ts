@@ -1,12 +1,13 @@
 import * as crypto from 'crypto';
 import { PaymentConfigService } from '../../config/payment-config.service';
-import { PaymentDriver } from '../interfaces/payment-driver.interface';
-import { PaymentResult } from '../types/payment.types';
+import type { PaymentDriver } from '../interfaces/payment-driver.interface';
 import { postJson } from '../utils/http-client.util';
 import { buildPaymentResult, firstDefined } from '../utils/normalizers.util';
 import { fromProviderAmount, toProviderAmount } from '../utils/amount.util';
 import {
   UzumApiResponse,
+  UzumCancelPaymentRequest,
+  UzumCheckPaymentRequest,
   UzumGetOperationStateRequest,
   UzumGetOrderStatusRequest,
   UzumGetReceiptsRequest,
@@ -17,13 +18,23 @@ import {
   UzumOperationResult,
   UzumOperationStateResult,
   UzumOrderStatusResult,
+  UzumPaymentResult,
   UzumPurchaseReceiptRequest,
   UzumPurchaseReceiptResult,
   UzumRegisterPaymentRequest,
   UzumRegisterPaymentResult,
 } from '../types/uzum.types';
 
-export class UzumDriver implements PaymentDriver {
+export class UzumDriver
+  implements
+    PaymentDriver<
+      UzumRegisterPaymentRequest,
+      UzumCheckPaymentRequest,
+      UzumCancelPaymentRequest,
+      never,
+      UzumPaymentResult
+    >
+{
   constructor(private readonly configService: PaymentConfigService) {}
 
   private get config() {
@@ -100,7 +111,7 @@ export class UzumDriver implements PaymentDriver {
 
   async createPayment(
     data: UzumRegisterPaymentRequest,
-  ): Promise<PaymentResult> {
+  ): Promise<UzumPaymentResult> {
     const response = await this.registerPayment(data);
     const result = this.ensureSuccess(response, 'Uzum payment registration');
 
@@ -112,6 +123,12 @@ export class UzumDriver implements PaymentDriver {
       amount: data.amount,
       currency: 'UZS',
       orderId: data.orderId,
+      providerPaymentId: result.orderId,
+      checkoutReference: result.orderId,
+      providerStatus: 'REGISTERED',
+      expiresAt: new Date(
+        Date.now() + Number(data.sessionTimeoutSecs || 1800) * 1000,
+      ).toISOString(),
       message: response.message,
       raw: response,
     });
@@ -144,8 +161,13 @@ export class UzumDriver implements PaymentDriver {
     );
   }
 
-  async checkPayment(data: any): Promise<PaymentResult> {
-    const orderId = data.orderId || data.transactionId;
+  async checkPayment(data: UzumCheckPaymentRequest): Promise<UzumPaymentResult> {
+    const orderId =
+      'orderId' in data && data.orderId
+        ? data.orderId
+        : 'transactionId' in data
+          ? data.transactionId
+          : undefined;
 
     if (orderId) {
       const orderStatusResponse = await this.getOrderStatus({
@@ -164,6 +186,14 @@ export class UzumDriver implements PaymentDriver {
         amount: fromProviderAmount(orderResult.totalAmount),
         currency: 'UZS',
         orderId: orderResult.merchantOrderId,
+        providerPaymentId: latestOperation?.operationId || orderResult.orderId,
+        checkoutReference: orderResult.bindingId,
+        providerStatus: orderResult.status,
+        metadata: {
+          operations: orderResult.operations,
+          actionCode: orderResult.actionCode,
+          cardType: orderResult.cardType,
+        },
         message: firstDefined(
           latestOperation?.actionCodeDescription,
           orderStatusResponse.message,
@@ -172,7 +202,7 @@ export class UzumDriver implements PaymentDriver {
       });
     }
 
-    if (data.operationId) {
+    if ('operationId' in data && data.operationId) {
       const operationStateResponse = await this.getOperationState({
         operationId: String(data.operationId),
         amount: data.amount,
@@ -190,6 +220,14 @@ export class UzumDriver implements PaymentDriver {
         amount: data.amount,
         currency: 'UZS',
         orderId: data.orderId,
+        providerPaymentId:
+          operationResult.operation.operationId || String(data.operationId),
+        providerStatus: operationResult.operation.state,
+        checkoutReference: operationResult.operation.rrn,
+        metadata: {
+          merchantOperationId: operationResult.operation.merchantOperationId,
+          operationType: operationResult.operation.operationType,
+        },
         message: firstDefined(
           operationResult.operation.actionCodeDescription,
           operationStateResponse.message,
@@ -231,7 +269,7 @@ export class UzumDriver implements PaymentDriver {
 
   async completePayment(
     data: UzumOperationCommand,
-  ): Promise<PaymentResult> {
+  ): Promise<UzumPaymentResult> {
     const response = await postJson<UzumApiResponse<UzumOperationResult>>(
       `${this.config.apiUrl}/api/v1/acquiring/complete`,
       {
@@ -250,6 +288,8 @@ export class UzumDriver implements PaymentDriver {
       amount: data.amount,
       currency: 'UZS',
       orderId: data.orderId,
+      providerPaymentId: result.operationId,
+      providerStatus: 'COMPLETED',
       message: response.message,
       raw: response,
     });
@@ -257,7 +297,7 @@ export class UzumDriver implements PaymentDriver {
 
   async refundPayment(
     data: UzumOperationCommand,
-  ): Promise<PaymentResult> {
+  ): Promise<UzumPaymentResult> {
     const response = await postJson<UzumApiResponse<UzumOperationResult>>(
       `${this.config.apiUrl}/api/v1/acquiring/refund`,
       {
@@ -276,6 +316,8 @@ export class UzumDriver implements PaymentDriver {
       amount: data.amount,
       currency: 'UZS',
       orderId: data.orderId,
+      providerPaymentId: result.operationId,
+      providerStatus: 'REFUNDED',
       message: response.message,
       raw: response,
     });
@@ -283,7 +325,7 @@ export class UzumDriver implements PaymentDriver {
 
   async reversePayment(
     data: UzumOperationCommand,
-  ): Promise<PaymentResult> {
+  ): Promise<UzumPaymentResult> {
     const response = await postJson<UzumApiResponse<UzumOperationResult>>(
       `${this.config.apiUrl}/api/v1/acquiring/reverse`,
       {
@@ -302,14 +344,16 @@ export class UzumDriver implements PaymentDriver {
       amount: data.amount,
       currency: 'UZS',
       orderId: data.orderId,
+      providerPaymentId: result.operationId,
+      providerStatus: 'REVERSED',
       message: response.message,
       raw: response,
     });
   }
 
   async cancelPayment(
-    data: { orderId?: string; transactionId?: string; amount: number; operationId?: string },
-  ): Promise<PaymentResult> {
+    data: UzumCancelPaymentRequest,
+  ): Promise<UzumPaymentResult> {
     return this.reversePayment({
       orderId: data.orderId || data.transactionId!,
       amount: data.amount,

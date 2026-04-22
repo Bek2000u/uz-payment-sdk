@@ -2,10 +2,13 @@ import axios from 'axios';
 import * as crypto from 'crypto';
 import { PaymentConfigService, PaymentSdkConfig } from '../config/payment-config.service';
 import { maskSensitiveData } from '../logger/sdk-logger';
+import { fromProviderAmount } from '../payments/utils/amount.util';
 import { generateBasicAuthHeader } from '../payments/utils/signer.util';
-import { WebhookPayload } from './webhook.types';
+import type { ClickWebhookPayload } from '../payments/types/click.types';
+import type { PaymeMerchantApiRequest } from '../payments/types/payme.types';
+import type { WebhookPayload } from './webhook.types';
 
-export { WebhookPayload } from './webhook.types';
+export type { WebhookPayload } from './webhook.types';
 
 export interface WebhookEvent {
   id: string;
@@ -204,6 +207,77 @@ export class WebhookService {
     }
   }
 
+  parseClickWebhook(
+    payload: ClickWebhookPayload,
+    signature = payload.sign_string,
+  ): WebhookPayload {
+    if (
+      !signature ||
+      !this.validateClickSignature(
+        payload as unknown as Record<string, unknown>,
+        signature,
+      )
+    ) {
+      throw new Error('Invalid Click webhook signature');
+    }
+
+    const action = Number(payload.action);
+    const errorCode = Number(payload.error || 0);
+    const providerPaymentId = String(payload.click_trans_id);
+    const providerInvoiceId =
+      payload.merchant_prepare_id !== undefined
+        ? String(payload.merchant_prepare_id)
+        : undefined;
+
+    return {
+      provider: 'click',
+      transactionId: providerInvoiceId || providerPaymentId,
+      orderId: String(payload.merchant_trans_id),
+      amount: fromProviderAmount(Number(payload.amount)) || 0,
+      status: this.mapClickWebhookStatus(action, errorCode),
+      timestamp: this.toIsoTimestamp(payload.sign_time),
+      providerInvoiceId,
+      providerPaymentId,
+      providerStatus: errorCode === 0 ? String(action) : String(errorCode),
+      metadata: {
+        action,
+        signTime: payload.sign_time,
+        errorCode,
+        errorNote: payload.error_note,
+      },
+      signature,
+    };
+  }
+
+  parsePaymeWebhook(
+    payload: PaymeMerchantApiRequest,
+    authorization?: string,
+  ): WebhookPayload {
+    if (!this.validatePaymeSignature(payload, authorization || '')) {
+      throw new Error('Invalid Payme webhook signature');
+    }
+
+    const transactionId = String(payload.params.id || payload.id || 'unknown');
+    const orderId = this.extractPaymeOrderId(payload.params.account) || transactionId;
+
+    return {
+      provider: 'payme',
+      transactionId,
+      orderId,
+      amount: fromProviderAmount(payload.params.amount),
+      status: this.mapPaymeWebhookStatus(payload.method),
+      timestamp: this.toIsoTimestamp(payload.params.time),
+      providerPaymentId: transactionId,
+      providerStatus: payload.method,
+      metadata: {
+        jsonRpcId: payload.id ?? null,
+        method: payload.method,
+        reason: payload.params.reason,
+      },
+      signature: authorization,
+    };
+  }
+
   getWebhookEvents(limit = 50): WebhookEvent[] {
     return [...this.webhookEvents]
       .sort(
@@ -266,5 +340,65 @@ export class WebhookService {
       data.status || 'unknown',
       String(data.amount || 0),
     ].join(':');
+  }
+
+  private mapClickWebhookStatus(
+    action: number,
+    errorCode: number,
+  ): WebhookPayload['status'] {
+    if (errorCode < 0) {
+      return errorCode === -9 ? 'cancelled' : 'failed';
+    }
+
+    return action === 1 ? 'success' : 'pending';
+  }
+
+  private mapPaymeWebhookStatus(
+    method: PaymeMerchantApiRequest['method'],
+  ): WebhookPayload['status'] {
+    switch (method) {
+      case 'PerformTransaction':
+        return 'success';
+      case 'CancelTransaction':
+        return 'cancelled';
+      case 'CheckPerformTransaction':
+      case 'CreateTransaction':
+      case 'CheckTransaction':
+      default:
+        return 'pending';
+    }
+  }
+
+  private extractPaymeOrderId(
+    account?: Record<string, unknown>,
+  ): string | undefined {
+    if (!account) {
+      return undefined;
+    }
+
+    const orderId = account.order_id ?? account.orderId ?? account.order;
+    return orderId !== undefined ? String(orderId) : undefined;
+  }
+
+  private toIsoTimestamp(value?: string | number): string {
+    if (typeof value === 'number') {
+      return new Date(value < 1_000_000_000_000 ? value * 1000 : value).toISOString();
+    }
+
+    if (typeof value === 'string') {
+      const numeric = Number(value);
+      if (!Number.isNaN(numeric) && value.trim() !== '') {
+        return new Date(
+          numeric < 1_000_000_000_000 ? numeric * 1000 : numeric,
+        ).toISOString();
+      }
+
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+      }
+    }
+
+    return new Date().toISOString();
   }
 }

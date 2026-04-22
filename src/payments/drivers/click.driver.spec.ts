@@ -4,15 +4,13 @@ import { ClickDriver } from './click.driver';
 import { PaymentConfigService } from '../../config/payment-config.service';
 import { ClickError } from '../../errors/ClickError';
 
-jest.mock('axios');
-
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-
 describe('ClickDriver', () => {
   let driver: ClickDriver;
+  let requestSpy: jest.SpiedFunction<typeof axios.request>;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    requestSpy = jest.spyOn(axios, 'request');
 
     driver = new ClickDriver({
       clickConfig: {
@@ -31,7 +29,7 @@ describe('ClickDriver', () => {
 
   it('creates invoice via official Merchant API contract', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1710000000000);
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         error_code: 0,
         invoice_id: 987654,
@@ -50,7 +48,7 @@ describe('ClickDriver', () => {
       .update(`${timestampSec}click-secret`)
       .digest('hex');
 
-    expect(mockedAxios.request).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
         url: 'https://api.click.uz/v2/merchant/invoice/create',
@@ -70,11 +68,13 @@ describe('ClickDriver', () => {
     expect(result.transactionId).toBe('987654');
     expect(result.status).toBe('pending');
     expect(result.amount).toBe(1250);
+    expect(result.providerInvoiceId).toBe('987654');
+    expect(result.checkoutReference).toBe('987654');
   });
 
   it('checks payment status via official Merchant API contract', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1710000000000);
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         error_code: 0,
         invoice_status: 0,
@@ -86,7 +86,7 @@ describe('ClickDriver', () => {
       transactionId: '445566',
     });
 
-    expect(mockedAxios.request).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
         url: 'https://api.click.uz/v2/merchant/invoice/status/101202/445566',
@@ -94,11 +94,13 @@ describe('ClickDriver', () => {
     );
     expect(result.transactionId).toBe('445566');
     expect(result.status).toBe('pending');
+    expect(result.providerInvoiceId).toBe('445566');
+    expect(result.providerStatus).toBe('0');
   });
 
   it('checks payment status by payment id when it is available', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1710000000000);
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         error_code: 0,
         payment_id: 445566,
@@ -111,7 +113,7 @@ describe('ClickDriver', () => {
       orderId: 'order-1',
     });
 
-    expect(mockedAxios.request).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
         url: 'https://api.click.uz/v2/merchant/payment/status/101202/445566',
@@ -119,11 +121,13 @@ describe('ClickDriver', () => {
     );
     expect(result.transactionId).toBe('445566');
     expect(result.status).toBe('success');
+    expect(result.providerPaymentId).toBe('445566');
+    expect(result.providerStatus).toBe('1');
   });
 
   it('checks payment status by merchant transaction id when date is provided', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1710000000000);
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         error_code: 0,
         payment_id: 778899,
@@ -136,7 +140,7 @@ describe('ClickDriver', () => {
       paymentDate: '2026-04-22',
     });
 
-    expect(mockedAxios.request).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
         url: 'https://api.click.uz/v2/merchant/payment/status_by_mti/101202/order-77/2026-04-22',
@@ -144,6 +148,8 @@ describe('ClickDriver', () => {
     );
     expect(result.transactionId).toBe('778899');
     expect(result.status).toBe('success');
+    expect(result.providerPaymentId).toBe('778899');
+    expect(result.metadata).toEqual({ paymentDate: '2026-04-22' });
   });
 
   it('generates hosted click invoice url', () => {
@@ -161,7 +167,7 @@ describe('ClickDriver', () => {
 
   it('throws ClickError on negative api error code', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1710000000001);
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         error_code: -9,
         error_note: 'Invalid request',

@@ -1,5 +1,7 @@
 import { PaymentsService } from '../payments.service';
-import { PaymentResult } from '../types/payment.types';
+import type { ClickPaymentResult } from '../types/click.types';
+import type { PaymePaymentResult } from '../types/payme.types';
+import type { UzumPaymentResult } from '../types/uzum.types';
 
 describe('PaymentsService', () => {
   let service: PaymentsService;
@@ -45,7 +47,7 @@ describe('PaymentsService', () => {
   });
 
   it('supports object-style create request', async () => {
-    const mockResponse: PaymentResult = {
+    const mockResponse: PaymePaymentResult = {
       success: true,
       provider: 'payme',
       transactionId: 'txn_1',
@@ -136,7 +138,7 @@ describe('PaymentsService', () => {
   });
 
   it('routes explicit click facade methods to generic provider flow', async () => {
-    const mockResponse: PaymentResult = {
+    const mockResponse: ClickPaymentResult = {
       success: true,
       provider: 'click',
       transactionId: 'click-payment-1',
@@ -158,7 +160,7 @@ describe('PaymentsService', () => {
   });
 
   it('routes explicit uzum refund facade to driver method', async () => {
-    const mockResponse: PaymentResult = {
+    const mockResponse: UzumPaymentResult = {
       success: true,
       provider: 'uzum',
       transactionId: 'operation-1',

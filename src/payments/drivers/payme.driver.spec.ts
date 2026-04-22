@@ -3,15 +3,13 @@ import { PaymeDriver } from './payme.driver';
 import { PaymentConfigService } from '../../config/payment-config.service';
 import { PaymeError } from '../../errors/PaymeError';
 
-jest.mock('axios');
-
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-
 describe('PaymeDriver', () => {
   let driver: PaymeDriver;
+  let requestSpy: jest.SpiedFunction<typeof axios.request>;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    requestSpy = jest.spyOn(axios, 'request');
 
     driver = new PaymeDriver({
       paymeConfig: {
@@ -29,12 +27,15 @@ describe('PaymeDriver', () => {
 
   it('creates receipt via Subscribe API with X-Auth header', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1710000000000);
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         result: {
           receipt: {
             _id: 'receipt-1',
             state: 0,
+            meta: {
+              source: 'checkout',
+            },
           },
         },
       },
@@ -46,7 +47,7 @@ describe('PaymeDriver', () => {
       detail: { receipt_type: 0 },
     });
 
-    expect(mockedAxios.request).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
         url: 'https://checkout.test.paycom.uz/api',
@@ -69,17 +70,21 @@ describe('PaymeDriver', () => {
     expect(result.transactionId).toBe('receipt-1');
     expect(result.status).toBe('pending');
     expect(result.amount).toBe(5000);
+    expect(result.providerPaymentId).toBe('receipt-1');
+    expect(result.providerInvoiceId).toBe('receipt-1');
+    expect(result.metadata).toEqual({ source: 'checkout' });
   });
 
   it('checks receipt state via Subscribe API', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1710000000001);
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         result: {
           state: 4,
           receipt: {
             amount: 500000,
             account: { order_id: 'order-1' },
+            detail: { origin: 'merchant' },
           },
         },
       },
@@ -89,7 +94,7 @@ describe('PaymeDriver', () => {
       transactionId: 'receipt-1',
     });
 
-    expect(mockedAxios.request).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
         url: 'https://checkout.test.paycom.uz/api',
@@ -103,6 +108,9 @@ describe('PaymeDriver', () => {
     expect(result.status).toBe('success');
     expect(result.orderId).toBe('order-1');
     expect(result.amount).toBe(5000);
+    expect(result.providerPaymentId).toBe('receipt-1');
+    expect(result.providerStatus).toBe('4');
+    expect(result.metadata).toEqual({ origin: 'merchant' });
   });
 
   it('generates hosted checkout invoice url', () => {
@@ -118,7 +126,7 @@ describe('PaymeDriver', () => {
 
   it('throws PaymeError on JSON-RPC error payload', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1710000000002);
-    mockedAxios.request.mockResolvedValue({
+    requestSpy.mockResolvedValue({
       data: {
         error: {
           code: -31050,

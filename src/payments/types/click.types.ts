@@ -36,10 +36,28 @@ export interface ClickCheckPaymentByMerchantTransIdRequest {
   paymentDate: string;
 }
 
+export type ClickCheckRequest =
+  | ClickCheckInvoiceRequest
+  | ClickCheckPaymentRequest
+  | ClickCheckPaymentByMerchantTransIdRequest;
+
 export interface ClickPaymentStatusResponse extends ClickApiResponseBase {
   payment_id?: number | string;
   payment_status?: number | string;
   merchant_trans_id?: string;
+}
+
+export interface ClickWebhookPayload {
+  click_trans_id: string | number;
+  service_id: string | number;
+  merchant_trans_id: string;
+  amount: string | number;
+  action: string | number;
+  sign_time: string;
+  sign_string?: string;
+  error?: string | number;
+  error_note?: string;
+  merchant_prepare_id?: string | number;
 }
 
 export interface ClickCancelPaymentRequest {

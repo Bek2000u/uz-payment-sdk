@@ -32,6 +32,8 @@ export type NormalizedPaymentStatus =
   | 'processing'
   | 'unknown';
 
+export type PaymentMetadata = Record<string, unknown>;
+
 export interface PaymentResult<
   TRaw = unknown,
   TProvider extends PaymentProviderId = PaymentProviderId,
@@ -44,6 +46,12 @@ export interface PaymentResult<
   amount?: PaymentAmount;
   currency?: string;
   orderId?: string;
+  providerInvoiceId?: string;
+  providerPaymentId?: string;
+  checkoutReference?: string;
+  providerStatus?: string;
+  expiresAt?: string;
+  metadata?: PaymentMetadata;
   message?: string;
   raw?: TRaw;
 }

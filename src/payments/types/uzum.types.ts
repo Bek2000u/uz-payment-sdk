@@ -51,6 +51,10 @@ export interface UzumGetOperationStateRequest {
   orderId?: string;
 }
 
+export type UzumCheckPaymentRequest =
+  | UzumGetOrderStatusRequest
+  | UzumGetOperationStateRequest;
+
 export interface UzumOrderStatusResult {
   orderId: string;
   status: string;
@@ -72,6 +76,13 @@ export interface UzumOperationStateResult {
 
 export interface UzumOperationCommand {
   orderId: string;
+  amount: PaymentAmount;
+  operationId?: string;
+}
+
+export interface UzumCancelPaymentRequest {
+  orderId?: string;
+  transactionId?: string;
   amount: PaymentAmount;
   operationId?: string;
 }
