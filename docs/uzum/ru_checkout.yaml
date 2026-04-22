@@ -1,0 +1,3984 @@
+openapi: 3.0.2
+info:
+  title: Uzum Checkout
+  version: 1.10.3
+  description: >
+    **Uzum Checkout** — это REST API для интеграции сайтов и мобильных
+    приложений с платежным шлюзом Uzum, который позволяет принимать платежи,
+    выполнять фискализацию и управлять возвратами через единый и безопасный
+    интерфейс.
+
+
+    #### ⚙️ Основные возможности
+
+    - Форма оплаты, адаптирующаяся под мобильные устройства и веб
+
+    - Автоматическая фискализация чеков для одностадийных платежей
+
+    - Привязка карт и повторные платежи
+
+    - Платежи без открытия формы (Back-to-back Payment)  
+
+    - Полные и частичные возвраты
+
+    - Сертификация PCI DSS
+
+
+    #### 💳 Поддерживаемые системы
+
+    Visa · Mastercard · Uzcard · Humo
+
+
+    #### 🚀 Быстрый старт
+
+    - [Аутентификация через API-ключ](#section/Autentifikaciya)  
+
+    - [Фискализация](#section/Fiskalizaciya) 
+
+    - [Обработка платежей](#tag/Odnostadijnyj-platezh)    
+
+    - [Платёж без открытия формы (Back-to-back
+    Payment)](#tag/Platezh-bez-otkrytiya-formy-(Back-to-back-Payment))    
+
+    - [Управление и оплата привязками](#tag/Upravlenie-i-oplata-privyazkami)  
+
+    - [Тестовые данные и коды ошибок](#tag/Testirovanie)  
+
+
+    ---
+
+
+    # Начало работы
+
+
+    Чтобы интеграция с API **Uzum Checkout** прошла быстро и без ошибок,
+    выполните следующие шаги:
+
+
+    1. Настройте [фискализацию](#section/Fiskalizaciya).  
+
+
+    3. Изучите ключевые процессы:
+        - [Одностадийный платёж с автофискализацией](#section/Opisanie-procesov/Odnostadijnyj-platezh-s-avtofiskalizaciej)  
+        - [Одностадийный платёж без автофискализации](#section/Opisanie-procesov/Odnostadijnyj-platezh-bez-avtofiskalizacii)  
+        - [Управление платёжными картами: привязка, оплата, деактивация](#section/Opisanie-procesov/Processy-upravleniya-platyozhnymi-kartami:-privyazka-oplata-deaktivaciya)  
+        - [Оплата по номеру карты без открытия формы (с шифрованием данных)](#section/Opisanie-procesov/Oplata-po-nomeru-karty-bez-otkrytiya-formy-Uzum-Checkout-s-shifrovaniem-dannyh)  
+        - [Возвраты платежей](#section/Opisanie-procesov/Vozvrat-platezhej)  
+        - [Фискализация чека покупки на основании авансового](#tag/Vspomogatelnye-metody/operation/purchase_receipt_api_v1_acquiring_purchaseReceipt_post)
+
+    4. Проведите тестовую интеграцию используя [тестовую среду и тестовые
+    карты](#tag/Testirovanie).
+
+
+    5. Получите доступ к рабочей среде и переведите интеграцию в эксплуатацию.
+
+
+    ---
+
+
+    # Аутентификация
+
+
+    Uzum Checkout использует **аутентификацию по API-ключу** — простой и
+    безопасный метод авторизации.
+
+
+    Наша команда выдаст вам секретный **API-ключ**, который необходимо указывать
+    в каждом запросе в HTTP-заголовке **X-API-Key**.
+
+
+    Если ключ действителен и совпадает с ключом в нашей системе, запрос
+    считается авторизованным.
+
+
+    ## Обязательные HTTP-заголовки
+
+
+    **X-Terminal-Id** — идентификатор терминала, используемого для обработки
+    транзакций. Мы присваиваем и передаем этот идентификатор каждому партнеру.
+
+
+    **X-API-Key** — уникальный API-ключ, который используется для авторизации
+    запросов. Мы присваиваем и передаем его каждому партнеру.
+
+
+    **Content-Language** — язык формы оплаты. Возможные значения: `"ru-RU"`,
+    `"uz-UZ"`, `"en-EN"`.
+
+
+    ---
+
+
+    # Одностадийный платеж
+
+
+    **Одностадийный платеж** – это платеж в один этап, при котором **авторизация
+    карты
+
+    и списание денежных средств клиента происходят практически одновременно**. 
+
+
+    ***Например***, при онлайн-покупке билетов в кино, **оплата происходит
+
+    непосредственно после ввода платежных данных**. После оплаты, клиент получит
+
+    билеты в кратчайшие сроки, учитывая время, необходимое на обработку данных
+
+    со стороны сервиса продажи билетов.
+
+
+
+    После проведения одностадийного платежа вы **можете осуществить как полный,
+
+    так и частичный возврат средств** клиенту.
+
+
+
+    При одностадийном платеже вы **можете использовать
+    [автофискализацию](#section/Fiskalizaciya/Fiskalizaciya-pri-odnostadijnom-platezhe)**.
+    Мы
+
+    берем всю работу по фискализации на себя; вам не нужно самостоятельно
+
+    передавать данные в сервис фискализации.
+
+
+    # Фискализация
+
+
+    Фискализация — это обязательный процесс, наложенный законодательством,
+
+    который включает в себя регистрацию платежных операций и выдачу фискальных
+
+    чеков.
+
+
+    Вы можете воспользоваться **автоматической фискализацией**. **Изначально она
+    выключена**, чтобы ее включить - вам нужно **сообщить об этом  менеджеру со
+    стороны Uzum Bank**.
+
+
+    - **При включенной** услуге автофискализации вам необходимо передавать
+    информацию
+
+    о корзине в метод `/payment/register`, включая сведения о каждом товаре, а
+
+    также его ИКПУ, код упаковки и % ставки НДС. Cм. раздел [ИКПУ и Код
+    упаковки](#section/Fiskalizaciya/IKPU-i-Kod-upakovki).
+
+
+    - **При выключенной** услуге автофискализации вам необходимо передавать
+    данные в
+
+    сервис фискализации самостоятельно. Вы можете воспользоваться <a
+
+    href='https://developer.uzumbank.uz/fiscalization' target='_blank'>нашим
+
+    сервисом фискализации</a>.
+
+
+    ## ИКПУ и Код упаковки
+
+
+
+    Для проведения фискализации вам необходимо знать ИКПУ и код упаковки товара.
+
+    ИКПУ и код упаковки можно найти на сайте Единого Электронного Национального
+
+    Каталога Продукции: https://tasnif.soliq.uz/ 
+
+
+
+    1. Перейдите на сайт https://tasnif.soliq.uz//
+
+
+    1. На главной странице обратите внимание на поисковую строку и выберите
+
+    подходящий метод поиска. Чаще всего оптимальным вариантом является 'Поиск по
+
+    тексту'.
+
+
+
+    <a href='/img/fiscalization/ikpu-1.png' target='_blank'><img
+
+    src='/img/fiscalization/ikpu-1.png'/></a>.
+
+
+
+    3. Введите в поисковую строку ключевые слова, например, "электрический
+
+    чайник". Если ваш товар не появился в списке, попробуйте использовать более
+
+    общие термины, например, "чайник".
+
+
+
+    <a href='/img/fiscalization/ikpu-2.png' target='_blank'><img
+
+    src='/img/fiscalization/ikpu-2.png'/></a>.
+
+
+
+    4. Перейдите на страницу товара, который наиболее соответствует вашему.
+
+
+    5. ИКПУ товара будет указан в верхней части страницы.
+
+
+
+    <a href='/img/fiscalization/ikpu-3.png' target='_blank'><img
+
+    src='/img/fiscalization/ikpu-3.png'/></a>.
+
+
+
+    6. В разделе "Условная единица" найдите код. Варианты могут быть разные,
+
+    например, "шт" для штучных товаров, “грамм” для весовых товаров и “услуга”
+
+    (сум) для услуг. Если возникли трудности в выборе правильной условной
+
+    единицы, обратитесь к вашему отделу бухгалтерии за помощью.
+
+
+    ---
+
+
+    # Описание процесов
+
+
+
+    В данном разделе мы предоставим подробное описание процессов работы с
+
+    сервисом Uzum Checkout, обеспечим понимание ключевых операций и шагов,
+
+    необходимых для проведения платежа. 
+
+
+
+    - [Одностадийный платёж с
+    автофискализацией](#section/Opisanie-procesov/Odnostadijnyj-platezh-s-avtofiskalizaciej)  
+
+    - [Одностадийный платёж без
+    автофискализации](#section/Opisanie-procesov/Odnostadijnyj-platezh-bez-avtofiskalizacii)  
+
+    - [Управление картами: привязка, оплата,
+    деактивация](#section/Opisanie-procesov/Processy-upravleniya-platyozhnymi-kartami:-privyazka-oplata-deaktivaciya)  
+
+    - [Оплата по номеру карты без открытия формы (с шифрованием
+    данных)](#section/Opisanie-procesov/Oplata-po-nomeru-karty-bez-otkrytiya-formy-Uzum-Checkout-s-shifrovaniem-dannyh)  
+
+    - [Возвраты платежей](#section/Opisanie-procesov/Vozvrat-platezhej)  
+
+    - [Фискализация чека покупки на основании
+    авансового](#section/Opisanie-procesov/Fiskalizaciya-cheka-pokupki-na-osnovanii-avansovogo)
+
+
+
+    ## Одностадийный платеж с автофискализацией
+
+
+    Для осуществления одностадийного платежа с автофискализацией используется
+
+    метод регистрации платежа `/payment/register`.
+
+
+    В запросе следует указать тип платежа `payType="ONE_STEP"` и передать
+
+    информацию о товарах в корзине в объекте `cart`. Эти данные необходимы для
+
+    автоматической фискализации чека, основанной на переданных товарах.
+
+
+    <a href='/img/checkout/checkout-one-step-auto.png' target='_blank'><img
+
+    src='/img/checkout/checkout-one-step-auto.png' style="display: block;
+    margin: 0 auto; max-width:70%; height: auto;"/></a>.
+
+
+    1. Клиент начинает процесс оплаты на вашей платформе нажав на кнопку
+    “Оплатить”. 
+
+
+    2. Вы отправляете запрос в Uzum Checkout для регистрации
+
+    одностадийного платежа методом [/payment/register]() с параметром
+    `payType="ONE_STEP"`
+
+    включая детали корзины в объекте `cart` для создания фискального чека.  
+
+
+    3. Мы регистрируем платеж, отправляем вам уникальный
+
+    идентификатор заказа `orderId` и URL платежной страницы.  
+
+
+    4. Вы перенаправляете клиента на платежную страницу Uzum Checkout используя
+    URL платежной страницы.
+
+
+    5. Клиент вводит данные карты и подтверждает оплату.
+
+
+    6. Мы проводим операцию списания.
+
+
+    7. Мы фискализируем чек.
+
+
+    8. Мы отправляем вам callback с информацией о выполнении платежа.
+
+
+    9. Вы подтверждаете получение колбэка.
+
+
+    10. Мы уведомляем клиента об успешном проведении платежа и перенаправляем
+    его на вашу страницу.
+
+
+
+    ## Одностадийный платеж без автофискализации
+
+
+
+    Для осуществления одностадийного платежа без автофискализации используется
+
+    метод регистрации платежа `/payment/register` с типом платежа
+
+    `payType="ONE_STEP"`. 
+
+
+
+    Передавать информацию о товарах в корзине не нужно. 
+
+
+
+    <a href='/img/checkout/checkout-one-step-self.png' target='_blank'><img
+
+    src='/img/checkout/checkout-one-step-self.png' style="display: block;
+    margin: 0 auto; max-width:70%; height: auto;"/></a>.
+
+
+
+    1. Клиент начинает процесс оплаты на вашей платформе нажав на кнопку
+
+    “Оплатить”.
+
+
+    2. Вы отправляете запрос в Uzum Checkout для регистрации
+
+    одностадийного платежа без автофискализации [/payment/register](#) с
+    параметром
+
+    `payType=”ONE_STEP”`.
+
+
+    3. Мы регистрируем платеж, отправляем вам уникальный
+
+    идентификатор заказа `orderId` и URL платежной страницы.
+
+
+    4. Вы перенаправляете клиента на платежную страницу Uzum Checkout используя
+    URL платежной страницы.
+
+
+    5. Клиент вводит данные карты/выбирает привязку и подтверждает оплату.
+
+
+    6. После подтверждения оплаты, мы проводим списание средств.
+
+
+    7. Мы отправляем callback с информацией о выполнении платежа.
+
+
+    8. Вы подтверждаете получение callback.
+
+
+    9. Мы уведомляем клиента об успешном проведении платежа и перенаправляет его
+    на вашу страницу.
+
+
+    ### Привязка карты 
+
+
+    Привязку карты можно осуществить с помощью метода `/payment/register`. При
+
+    вызове этого метода, необходимо передать `operationType="BINDING"`. 
+
+
+    <a href='/img/checkout/checkout-bind-card.png' target='_blank'><img
+
+    src='/img/checkout/checkout-bind-card.png' style="display: block; margin: 0
+    auto; max-width:70%; height: auto;"/></a>.
+
+
+    1. Клиент добавялет карту.
+
+
+    2. Вы отправляете запрос на привязку карты методом [/payment/register](#) с
+    `operationType="BINDING"`. 
+
+
+    3. Мы обрабатываем запрос и отправляем вам URL, ведущий клиента на
+
+    форму для ввода данных карты.
+
+
+    4. Вы предоставляете клиенту форму для ввода данных карты. 
+
+
+    5. Клиент вводит данные карты и подтверждает их.
+
+
+    6. Мы создаем привязку. В процессе создания привязки, Uzum Checkout временно
+    захолдирует
+
+    небольшую сумму на карте клиента для проверки ее работоспособности и
+
+    сразу же вернет эти средства.
+
+
+    7. По завершении процесса привязки, мы отправим вам callback с информацией о
+
+    результате операции.
+
+
+    8. Вы подтверждаете получение callback.
+
+
+    9. Мы уведомляем клиента об успешной привязке и перенаправлям его на вашу
+    страницу.
+
+
+
+    #### Альтернативный способ сохранения карты
+
+
+    Ваш клиент также может самостоятельно сохранить карту при совершении
+
+    покупки, установив флаг "Запомнить карту" на форме оплаты. 
+
+
+
+    В этом случае описанный выше процесс сохранения карты не требуется.
+
+
+
+    <a  href='/img/checkout/bind-card-app.png' target='_blank'><img
+
+    style="display:block; margin: auto; max-width: 400px"
+
+    src='/img/checkout/bind-card-app.png'/></a>.
+
+
+
+    ### Оплата привязкой
+
+
+    Клиент может выбрать одну из привязанных карт и оплатить ей заказ.
+
+
+    <a href='/img/checkout/checkout-pay-with-bind-card.png' target='_blank'><img
+
+    src='/img/checkout/checkout-pay-with-bind-card.png' style="display: block;
+    margin: 0 auto; max-width:70%; height: auto;"/></a>.
+
+
+    1. Клиент начинает процесс оплаты на вашей платформе нажав на кнопку
+    “Оплатить”. 
+
+
+    2. Вы отправляете запрос для получения списка привязок клиента.
+
+
+    3. Мы передаем вам список привязок клиента. 
+
+
+    4. Вы предоставляете клиенту список привязок.
+
+
+    5. Клиент выбирает нужную привязку для оплаты и инициирует оплату.
+
+
+    6. Вы отправляет запрос на регистрацию платежа методом
+    [/payment/register](#). Если у вас активирована
+
+    автофискализация, необходимо передавать данные о корзине для одностадийных
+
+    платежей.
+
+
+    7. Мы регистрируем платеж, отправляем вам уникальный
+
+    идентификатор заказа `orderId`. 
+
+
+    8. Вы отправляете запрос `/payment/merchantPay` с `type="bind"` и указанием
+    идентификатора выбранной привязки для проведения
+
+    платежа.
+
+
+    9. Мы обрабатываем платеж.
+
+
+    10. Мы отправляем вам callback с информацией о
+
+    результате операции.
+
+
+    11. Вы подтверждаете получение callback.
+
+
+    12. Вы уведомляеете клиента об успешном проведении платежа.
+
+
+
+
+    ### Деактивация карты
+
+
+    Клиент может отвязать платёжную карту от системы.
+
+
+    <a href='/img/checkout/unBindCard.png' target='_blank'><img
+
+    src='/img/checkout/unBindCard.png'/></a>.
+
+
+    1. Клиент заходит на страницу управления привязками карт в вашем приложении.
+
+
+    1. Вы обращаетесь в Uzum Checkout с запросом `/api/v1/acquiring/getBindings`
+    для получения списка привязок карт клиента.
+
+
+    1. Uzum Checkout обрабатывает запрос и передает вам список привязок карт
+    клиента.
+
+
+    1. Вы предоставляете клиенту полученный список привязок через ваш
+    пользовательский интерфейс.
+
+
+    1. Клиент просматривает список, выбирает карту для деактивации и инициирует
+    процесс деактивации.
+
+
+    1. Вы отправляете запрос на деактивацию карты в Uzum Checkout, используя
+    метод `/api/v1/acquiring/unBindCard`, указывая ID привязки.
+
+
+    1. Uzum Checkout обрабатывает запрос на деактивацию и отправляет вам ответ с
+    информацией о результате операции.    
+
+
+    ## Оплата по номеру карты без открытия формы Uzum Checkout с шифрованием
+    данных
+
+
+    Оплата по номеру карты с шифрованием данных доступна только после
+
+    прохождения сертификации PCI DSS.
+
+
+
+    Для оплаты по номеру карты без открытия формы Uzum Checkout необходимо
+
+    отправить запрос на регистрацию одностадийного через `/payment/register`.
+
+
+    Если у вас включена автофискализация, в одностадийных
+
+    платежах необходимо передавать данные о корзине.
+
+
+    <a href='/img/checkout/checkout-pay-card-no-form.png' target='_blank'><img
+
+    src='/img/checkout/checkout-pay-card-no-form.png' style="display: block;
+    margin: 0 auto; max-width:70%; height: auto;"/></a>.
+
+
+    1. Вы региструете платежа методом `/payment/register`.
+
+
+    2. Мы регистрируем платеж и возвращаем `orderId`.
+
+
+    3. Вы запрашиваете сертификат шифрования и fingerprint с помощью метода
+
+    [/acquiring/getMerchantCertificate](#tag/Platezh-bez-otkrytiya-formy-(Back-to-back-Payment)/operation/get_merchant_certificate_api_v1_acquiring_getMerchantCertificate_post).
+
+
+    4. Мы генерируем и возвращаем сертификат + fingerprint.
+
+
+    5. Вы отправляете запрос на проведение платежа по номеру карты при помощи
+    метода
+
+    [payment/merchantPay](#tag/Platezh-bez-otkrytiya-formy-(Back-to-back-Payment)/operation/merchant_pay_api_v1_payment_merchantPay_post),
+    указывая тип (type = card) и передавая зашифрованное
+
+    JSON-сообщение с данными карты.
+
+
+    6. Мы проводим платеж.
+
+
+    7. Мы отправляем вам callback с информацией о выполнении платежа.
+
+
+    8. Вы подтверждаете получение callback.
+
+
+    ## Возврат платежей
+
+
+    После успешного завершения платежа, когда статус транзакции обновился до
+
+    'COMPLETED', у вас появляется возможность осуществить возврат средств
+
+    клиенту. 
+
+
+
+    ### Возврат одностадийного платежа с автофискализацией
+
+
+
+    <a href='/img/checkout/checkout-auto-refund.png' target='_blank'><img
+
+    src='/img/checkout/checkout-auto-refund.png' style="display: block; margin:
+    0 auto; max-width:60%; height: auto;"/></a>.
+
+
+
+    1. Вы отправляете запрос на возврат платежа методом [/acquiring/refund](#);
+    указываете сумму возврата и
+
+    данные о возвращаемых товарах в объекте `cart`. 
+
+
+    2. Мы подтверждаем получение запроса.  
+
+
+    3. Мы проводим возврат платежа.
+
+
+    4. Мы фискализацируем возвратный чека.
+
+
+    5. Мы отправляем вам callback с информацией о выполнении
+
+    возврата и о создании чека.
+
+
+    6. Вы подтверждаете получение callback.
+
+
+
+
+
+
+
+    ### Возврат одностадийного платежа без автофискализации
+
+
+
+    <a href='/img/checkout/checkout-self-refund.png' target='_blank'><img
+
+    src='/img/checkout/checkout-self-refund.png' style="display: block; margin:
+    0 auto; max-width:60%; height: auto;"/></a>.
+
+
+
+    1. Вы отправляете запрос на возврат платежа методом [/acquiring/refund](#);
+    указываете сумму возврата. 
+
+
+    2. Мы подтверждаем получение запроса.  
+
+
+    3. Мы проводим возврат платежа.
+        
+    4. Мы отправляем вам callback с информацией о выполнении
+
+    возврата и о создании чека.
+
+
+    5. Вы подтверждаете получение callback.
+
+
+    ## Фискализация чека покупки на основании авансового
+
+
+    Метод
+    [/acquiring/purchaseReceipt](#tag/Vspomogatelnye-metody/operation/purchase_receipt_api_v1_acquiring_purchaseReceipt_post)
+    доступен только, если необходимо генерировать сначала авансовый чек с типом
+    PREPAID, а затем чек продажи.
+
+
+    <a href='/img/checkout/checkout-fiscalization-paid.png' target='_blank'><img
+
+    src='/img/checkout/checkout-fiscalization-paid.png' style="display: block;
+    margin: 0 auto; max-width:60%; height: auto;"/></a>.
+
+
+    1. Вы отправляете запрос на фискализацию чека покупки методом
+    [/acquiring/purchaseReceipt](#tag/Vspomogatelnye-metody/operation/purchase_receipt_api_v1_acquiring_purchaseReceipt_post). 
+
+
+    2. Мы подтверждаем получение запроса.  
+
+
+    3. Мы генерируем чек продажи.
+        
+    4. Мы отправляем вам callback с информацией о создании чека.
+
+
+    5. Вы подтверждаете получение callback.
+
+
+    ---
+
+
+    # Статусная модель
+
+
+    <a href='/img/checkout/one-step-states.png' target='_blank'><img
+    style="display: block; margin: 0 auto; max-width:50%; height: auto;"
+
+    src='/img/checkout/one-step-states.png'/></a>.
+
+
+    | Статус    |
+    Описание                                                                                                   
+    |
+
+    |-----------|-------------------------------------------------------------------------------------------------------------|
+
+    | REGISTERED| После вызова API `/register`, была осуществлена успешная
+    регистрация платежа в Checkout.                     |
+
+    | COMPLETED | Списание средств с карты клиента было осуществлено успешно.
+    Банк выпустивший карту клиента одобрил платеж.  |
+
+    | DECLINED  | Банк выпустивший карту клиента отказал в проведении платежа
+    или произошла ошибка при попытке проведения платежа. |
+
+    | REFUNDED  | После вызова API `/refund`, был успешно осуществлен возврат
+    средств на карту клиента.                        |
+
+
+    ---
+
+
+    # Callbacks
+
+
+    Callbacks или “колбеки” являются неотъемлемой частью взаимодействия нашего
+    API с вашим сервером. Они позволяют вашему сервису получать уведомления о
+    различных событиях и реагировать на них в реальном времени. 
+
+
+    Колбеки находятся в конце описания API методов. Каждый колбек можно
+    развернуть и изучить его структуру.
+
+
+    <a href='/img/checkout/callbacks.png' target='_blank'><img style="display:
+    block; margin: 1rem auto; max-width:80%; height: auto;"
+
+    src='/img/checkout/callbacks.png'/></a>
+
+
+    Ваш сервер должен обработать полученный колбек запрос и вернуть статус 200
+    OK. Это подтверждает нашему серверу, что уведомление было получено и
+    обработано. 
+
+
+    Если наш сервер не получит подтверждения, он отправит еще один колбек.
+    Максимум 5 раз.
+x-tagGroups:
+  - name: API
+    tags:
+      - Одностадийный платеж
+      - Управление и оплата привязками
+      - Платеж без открытия формы (Back-to-back Payment)
+      - Вспомогательные методы
+  - name: Дополнительная информация
+    tags:
+      - Тестирование
+      - Коды ошибок
+      - Post Messages
+paths:
+  /api/v1/acquiring/purchaseReceipt:
+    post:
+      tags:
+        - Вспомогательные методы
+      summary: Фискализация чека покупки на основании авансового
+      description: ''
+      operationId: purchase_receipt_api_v1_acquiring_purchaseReceipt_post
+      parameters:
+        - name: X-Operation-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: Ключ идемпотентности. Уникален для каждой операции
+            title: X-Operation-Id
+          description: Ключ идемпотентности. Уникален для каждой операции.
+        - name: X-Terminal-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: Идентификатор терминала
+            title: X-Terminal-Id
+          description: Идентификатор терминала
+        - name: X-API-Key
+          in: header
+          required: false
+          schema:
+            type: string
+            description: Уникальный ключ, который используется для аутентификации запросов.
+            title: X-API-KEY
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseReceiptRequest'
+      callbacks:
+        receipt_merchant_callback:
+          '{$receipt_callback_url}':
+            post:
+              summary: Receipt Merchant Callback
+              description: '[OPTIONAL] Коллбэки о создании чеков'
+              operationId: receipt_merchant_callback__receipt_callback_url__post
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/ReceiptGeneratedCallbackData'
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_PurchaseReceiptResponse_'
+  /api/v1/payment/register:
+    post:
+      tags:
+        - Одностадийный платеж
+        - Двухстадийный платеж
+        - Управление и оплата привязками
+        - Платеж без открытия формы (Back-to-back Payment)
+        - payment
+        - merchant
+      summary: Регистрация платежа
+      description: |-
+        Используется для:
+        - регистрации одностадийных платежей
+        - привязки банковских карт к учетной записи пользователя
+      operationId: register_payment_api_v1_payment_register_post
+      parameters:
+        - description: Предпочитаемая локаль клиента, определяющая язык формы оплаты.
+          required: true
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/LocaleType'
+            description: Предпочитаемая локаль клиента, определяющая язык формы оплаты.
+          name: Content-Language
+          in: header
+        - description: >-
+            Идентификатор терминала обработки транзакций в рамках нашей системы.
+            Мы сами присваиваем и передаем этот идентификатор каждому партнеру.
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: >-
+              Идентификатор терминала обработки транзакций в рамках нашей
+              системы. Мы сами присваиваем и передаем этот идентификатор каждому
+              партнеру.
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: >-
+            Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+            каждому партнеру.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: >-
+              Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+              каждому партнеру.
+          name: X-API-Key
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: Request
+              anyOf:
+                - $ref: '#/components/schemas/OrderPaymentRequest'
+                - $ref: '#/components/schemas/OrderBingingRequest'
+            examples:
+              one-step-payment:
+                summary: Регистрация одностадийного платежа
+                value:
+                  amount: 10000
+                  clientId: 9d4c81da-bc41-432e-8349-d1a95cafb51f
+                  currency: 860
+                  paymentDetails: one-step-text-description
+                  paymentParams:
+                    payType: ONE_STEP
+                    force3ds: true
+                    phoneNumber: '998900000000'
+                  viewType: REDIRECT
+                  sessionTimeoutSecs: 1800
+                  successUrl: https://successUrl.sandbox.com
+                  failureUrl: https://failureUrl.sandbox.com
+                  orderNumber: 01775eae-bf93-4877-a1b4-2be9f06b232e
+                  merchantParams:
+                    cart:
+                      cartId: bcc914eb-52ee-4218-b17b-21c2d94b9874
+                      receiptType: PURCHASE
+                      total: 10000
+                      items:
+                        - title: Almond
+                          productId: 2adce330-19a0-48e7-bd85-63a2dcf9de0a
+                          quantity: 1
+                          unitPrice: 10000
+                          total: 10000
+                          receiptParams:
+                            spic: '02208001001570002'
+                            packageCode: '1002699'
+                            vatPercent: 0
+                            PINFL: '11111111111111'
+              two-step-payment:
+                summary: Регистрация двухстадийного платежа
+                value:
+                  clientId: c0c1c5dd-0244-4ca4-917d-60efe492e300
+                  currency: 860
+                  amount: 10000
+                  orderNumber: 97830ee0-3da9-4c18-9e54-4f06g0850667
+                  paymentDetails: two-step-text-description
+                  successUrl: https://successUrl.sandbox.com
+                  failureUrl: https://failureUrl.sandbox.com
+                  viewType: REDIRECT
+                  paymentParams:
+                    payType: TWO_STEP
+                    force3ds: true
+                    phoneNumber: '998900000000'
+                  sessionTimeoutSecs: 600
+              bind-card:
+                summary: Привязка карты
+                value:
+                  clientId: 7ade8785-cb87-480f-831a-2463879cfe84
+                  currency: 860
+                  paymentDetails: binding-text-description
+                  paymentParams:
+                    payType: TWO_STEP
+                    phoneNumber: '5533234121'
+                    operationType: BINDING
+                  viewType: REDIRECT
+                  sessionTimeoutSecs: 1800
+                  successUrl: https://successUrl.sandbox.com
+                  failureUrl: https://failureUrl.sandbox.com
+                  orderNumber: 656bd5e5-46c1-4d43-8434-8b590b95413e
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: >-
+                  #/components/schemas/ApiResponse_Union_PaymentRegisterResponse__PaymentB2BRegisterResponse__
+      callbacks:
+        acquiring_merchant_callback:
+          '{$callback_url}':
+            post:
+              summary: Acquiring Merchant Callback
+              description: >-
+                [REQUIRED] Коллбэки о совершении финансовых операций,
+                настраиваются на стороне терминала
+              operationId: acquiring_merchant_callback__callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/AcquiringCallbackData'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+        event_merchant_callback:
+          '{$event_callback_url}':
+            post:
+              summary: Event Merchant Callback
+              description: >-
+                [OPTIONAL] Коллбэки бизнес событий, настраиваются на стороне
+                терминала
+              operationId: event_merchant_callback__event_callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/BusinessEvent'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+        receipt_merchant_callback:
+          '{$receipt_callback_url}':
+            post:
+              summary: Receipt Merchant Callback
+              description: '[OPTIONAL] Коллбэки о создании чеков'
+              operationId: receipt_merchant_callback__receipt_callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/ReceiptGeneratedCallbackData'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+  /api/v1/payment/merchantPay:
+    post:
+      tags:
+        - payment
+        - Платеж без открытия формы (Back-to-back Payment)
+        - Управление и оплата привязками
+      summary: Оплата без открытия формы (Back-to-back Payment)
+      description: Метод оплаты back to back, осуществляемый без открытия WebView.
+      operationId: merchant_pay_api_v1_payment_merchantPay_post
+      parameters:
+        - description: >-
+            Ключ идемпотентности, уникальный для каждой операции, который вы
+            должны сгенерировать в своей системе.
+          required: true
+          schema:
+            title: X-Operation-Id
+            type: string
+            description: >-
+              Ключ идемпотентности, уникальный для каждой операции, который вы
+              должны сгенерировать в своей системе.
+            format: uuid
+          name: X-Operation-Id
+          in: header
+        - description: >-
+            Идентификатор терминала обработки транзакций в рамках нашей системы.
+            Мы сами присваиваем и передаем этот идентификатор каждому партнеру.
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: >-
+              Идентификатор терминала обработки транзакций в рамках нашей
+              системы. Мы сами присваиваем и передаем этот идентификатор каждому
+              партнеру.
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: >-
+            Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+            каждому партнеру.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: >-
+              Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+              каждому партнеру.
+          name: X-API-Key
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantPayCommand'
+            examples:
+              bind_payment:
+                summary: Оплата привязкой back-to-back
+                value:
+                  processData:
+                    type: bind
+                    bindingId: 7acc3777-a5ca-4ba3-9641-37e98bb019df
+                  orderId: 504e8fa5-2eab-456a-acc3-822147fd0c533
+                  returnUrl: https://returnUrl.sandbox.com
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_MerchantPayResult_'
+  /api/v1/payment/getOrderStatus:
+    post:
+      tags:
+        - Вспомогательные методы
+        - payment
+        - merchant
+      summary: Получение статуса платежа
+      operationId: get_order_status_api_v1_payment_getOrderStatus_post
+      parameters:
+        - description: >-
+            Идентификатор терминала обработки транзакций в рамках нашей системы.
+            Мы сами присваиваем и передаем этот идентификатор каждому партнеру.
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: >-
+              Идентификатор терминала обработки транзакций в рамках нашей
+              системы. Мы сами присваиваем и передаем этот идентификатор каждому
+              партнеру.
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: >-
+            Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+            каждому партнеру.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: >-
+              Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+              каждому партнеру.
+          name: X-API-Key
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetOrderStatusCommand'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_GetOrderStatusResponse_'
+  /api/v1/payment/getOperationState:
+    post:
+      tags:
+        - Вспомогательные методы
+        - payment
+        - merchant
+      summary: Получение состояния операции
+      description: >-
+        Используется для получения статуса операций исключительно после вызова
+        методов на подтверждение, возврат или отмену платежа.
+      operationId: get_operation_state_api_v1_payment_getOperationState_post
+      parameters:
+        - description: >-
+            Идентификатор терминала обработки транзакций в рамках нашей системы.
+            Мы сами присваиваем и передаем этот идентификатор каждому партнеру.
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: >-
+              Идентификатор терминала обработки транзакций в рамках нашей
+              системы. Мы сами присваиваем и передаем этот идентификатор каждому
+              партнеру.
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: >-
+            Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+            каждому партнеру.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: >-
+              Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+              каждому партнеру.
+          name: X-API-Key
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetOperationStateCommand'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_GetOperationStateResponse_'
+  /api/v1/payment/getReceipts:
+    post:
+      tags:
+        - Вспомогательные методы
+        - payment
+        - merchant
+      summary: Получение информации о чеках
+      operationId: get_merchant_receipts_api_v1_payment_getReceipts_post
+      parameters:
+        - description: >-
+            Идентификатор терминала обработки транзакций в рамках нашей системы.
+            Мы сами присваиваем и передаем этот идентификатор каждому партнеру.
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: >-
+              Идентификатор терминала обработки транзакций в рамках нашей
+              системы. Мы сами присваиваем и передаем этот идентификатор каждому
+              партнеру.
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: >-
+            Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+            каждому партнеру.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: >-
+              Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+              каждому партнеру.
+          name: X-API-Key
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetReceiptRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_GetReceiptsResponse_'
+  /api/v1/acquiring/getMerchantCertificate:
+    post:
+      tags:
+        - Платеж без открытия формы (Back-to-back Payment)
+        - acquiring
+      summary: Получение сертификата шифрования и fingerprint
+      operationId: get_merchant_certificate_api_v1_acquiring_getMerchantCertificate_post
+      parameters:
+        - description: >-
+            Идентификатор терминала обработки транзакций в рамках нашей системы.
+            Мы сами присваиваем и передаем этот идентификатор каждому партнеру.
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: >-
+              Идентификатор терминала обработки транзакций в рамках нашей
+              системы. Мы сами присваиваем и передаем этот идентификатор каждому
+              партнеру.
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: >-
+            Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+            каждому партнеру.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: >-
+              Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+              каждому партнеру.
+          name: X-API-Key
+          in: header
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_GetCertificateResponse_'
+  /api/v1/acquiring/complete:
+    post:
+      tags:
+        - acquiring
+        - Двухстадийный платеж
+      summary: Подтверждение двухстадийного платежа
+      operationId: complete_api_v1_acquiring_complete_post
+      parameters:
+        - description: >-
+            Ключ идемпотентности, уникальный для каждой операции, который вы
+            должны сгенерировать в своей системе.
+          required: true
+          schema:
+            title: X-Operation-Id
+            type: string
+            description: >-
+              Ключ идемпотентности, уникальный для каждой операции, который вы
+              должны сгенерировать в своей системе.
+            format: uuid
+          name: X-Operation-Id
+          in: header
+        - description: >-
+            Идентификатор терминала обработки транзакций в рамках нашей системы.
+            Мы сами присваиваем и передаем этот идентификатор каждому партнеру.
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: >-
+              Идентификатор терминала обработки транзакций в рамках нашей
+              системы. Мы сами присваиваем и передаем этот идентификатор каждому
+              партнеру.
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: >-
+            Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+            каждому партнеру.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: >-
+              Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+              каждому партнеру.
+          name: X-API-Key
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Complete2SPCommand'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Complete2SPResponse_'
+      callbacks:
+        acquiring_merchant_callback:
+          '{$callback_url}':
+            post:
+              summary: Acquiring Merchant Callback
+              description: >-
+                [REQUIRED] Коллбэки о совершении финансовых операций,
+                настраиваются на стороне терминала
+              operationId: acquiring_merchant_callback__callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/AcquiringCallbackData'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+        event_merchant_callback:
+          '{$event_callback_url}':
+            post:
+              summary: Event Merchant Callback
+              description: >-
+                [OPTIONAL] Коллбэки бизнес событий, настраиваются на стороне
+                терминала
+              operationId: event_merchant_callback__event_callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/BusinessEvent'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+        receipt_merchant_callback:
+          '{$receipt_callback_url}':
+            post:
+              summary: Receipt Merchant Callback
+              description: '[OPTIONAL] Коллбэки о создании чеков'
+              operationId: receipt_merchant_callback__receipt_callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/ReceiptGeneratedCallbackData'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+  /api/v1/acquiring/refund:
+    post:
+      tags:
+        - acquiring
+        - Одностадийный платеж
+        - Двухстадийный платеж
+      summary: Возврат
+      description: >-
+        Полный или частичный возврат платежа. Использовать этот метод можно
+        только после того, как транзакция перешла в статус "COMPLETED"".
+      operationId: refund_api_v1_acquiring_refund_post
+      parameters:
+        - description: >-
+            Ключ идемпотентности, уникальный для каждой операции, который вы
+            должны сгенерировать в своей системе.
+          required: true
+          schema:
+            title: X-Operation-Id
+            type: string
+            description: >-
+              Ключ идемпотентности, уникальный для каждой операции, который вы
+              должны сгенерировать в своей системе.
+            format: uuid
+          name: X-Operation-Id
+          in: header
+        - description: >-
+            Идентификатор терминала обработки транзакций в рамках нашей системы.
+            Мы сами присваиваем и передаем этот идентификатор каждому партнеру.
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: >-
+              Идентификатор терминала обработки транзакций в рамках нашей
+              системы. Мы сами присваиваем и передаем этот идентификатор каждому
+              партнеру.
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: >-
+            Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+            каждому партнеру.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: >-
+              Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+              каждому партнеру.
+          name: X-API-Key
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_RefundResponse_'
+      callbacks:
+        acquiring_merchant_callback:
+          '{$callback_url}':
+            post:
+              summary: Acquiring Merchant Callback
+              description: >-
+                [REQUIRED] Коллбэки о совершении финансовых операций,
+                настраиваются на стороне терминала
+              operationId: acquiring_merchant_callback__callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/AcquiringCallbackData'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+        event_merchant_callback:
+          '{$event_callback_url}':
+            post:
+              summary: Event Merchant Callback
+              description: >-
+                [OPTIONAL] Коллбэки бизнес событий, настраиваются на стороне
+                терминала
+              operationId: event_merchant_callback__event_callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/BusinessEvent'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+        receipt_merchant_callback:
+          '{$receipt_callback_url}':
+            post:
+              summary: Receipt Merchant Callback
+              description: '[OPTIONAL] Коллбэки о создании чеков'
+              operationId: receipt_merchant_callback__receipt_callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/ReceiptGeneratedCallbackData'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+  /api/v1/acquiring/reverse:
+    post:
+      tags:
+        - Двухстадийный платеж
+        - acquiring
+      summary: Отмена двухстадийного платежа
+      description: >-
+        Метод используется для отмены платежа и последующего расхолдирования
+        средств на карте клиента. Отмену можно выполнить, если платеж находится
+        в статусе "AUTHORIZED".
+      operationId: reverse_api_v1_acquiring_reverse_post
+      parameters:
+        - description: >-
+            Ключ идемпотентности, уникальный для каждой операции, который вы
+            должны сгенерировать в своей системе.
+          required: true
+          schema:
+            title: X-Operation-Id
+            type: string
+            description: >-
+              Ключ идемпотентности, уникальный для каждой операции, который вы
+              должны сгенерировать в своей системе.
+            format: uuid
+          name: X-Operation-Id
+          in: header
+        - description: >-
+            Идентификатор терминала обработки транзакций в рамках нашей системы.
+            Мы сами присваиваем и передаем этот идентификатор каждому партнеру.
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: >-
+              Идентификатор терминала обработки транзакций в рамках нашей
+              системы. Мы сами присваиваем и передаем этот идентификатор каждому
+              партнеру.
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: >-
+            Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+            каждому партнеру.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: >-
+              Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+              каждому партнеру.
+          name: X-API-Key
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReverseCommand'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_ReverseResponse_'
+      callbacks:
+        acquiring_merchant_callback:
+          '{$callback_url}':
+            post:
+              summary: Acquiring Merchant Callback
+              description: >-
+                [REQUIRED] Коллбэки о совершении финансовых операций,
+                настраиваются на стороне терминала
+              operationId: acquiring_merchant_callback__callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/AcquiringCallbackData'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+        event_merchant_callback:
+          '{$event_callback_url}':
+            post:
+              summary: Event Merchant Callback
+              description: >-
+                [OPTIONAL] Коллбэки бизнес событий, настраиваются на стороне
+                терминала
+              operationId: event_merchant_callback__event_callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/BusinessEvent'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+        receipt_merchant_callback:
+          '{$receipt_callback_url}':
+            post:
+              summary: Receipt Merchant Callback
+              description: '[OPTIONAL] Коллбэки о создании чеков'
+              operationId: receipt_merchant_callback__receipt_callback_url__post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/ReceiptGeneratedCallbackData'
+                required: true
+              responses:
+                '200':
+                  description: Successful Response
+                  content:
+                    application/json:
+                      schema: {}
+  /api/v1/acquiring/getBindings:
+    post:
+      tags:
+        - Управление и оплата привязками
+        - acquiring
+      summary: Получение списка привязок клиента
+      description: Метод получения списка привязок клиента
+      operationId: get_bindings_api_v1_acquiring_getBindings_post
+      parameters:
+        - description: >-
+            Идентификатор терминала обработки транзакций в рамках нашей системы.
+            Мы сами присваиваем и передаем этот идентификатор каждому партнеру.
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: >-
+              Идентификатор терминала обработки транзакций в рамках нашей
+              системы. Мы сами присваиваем и передаем этот идентификатор каждому
+              партнеру.
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: >-
+            Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+            каждому партнеру.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: >-
+              Уникальный API ключ. Мы сами присваиваем и передаем этот ключ
+              каждому партнеру.
+          name: X-API-Key
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetBindingsCommand'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_GetBindingsResponse_'
+  /api/v1/acquiring/unBindCard:
+    post:
+      tags:
+        - Управление и оплата привязками
+        - acquiring
+      summary: Деактивация привязки клиента
+      description: Метод деактивации привязки клиента
+      operationId: unbind_card_api_v1_acquiring_unBindCard_post
+      parameters:
+        - description: Идентификатор терминала
+          required: true
+          schema:
+            title: X-Terminal-Id
+            type: string
+            description: Идентификатор терминала
+            format: uuid
+          name: X-Terminal-Id
+          in: header
+        - description: Уникальный ключ, который используется для аутентификации запросов.
+          required: false
+          schema:
+            title: X-API-Key
+            type: string
+            description: Уникальный ключ, который используется для аутентификации запросов.
+          name: X-API-Key
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnbindCardCommand'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_UnBindCardResponse_'
+components:
+  headers:
+    X-Custom-Header:
+      description: Пример пользовательского заголовка
+      schema:
+        type: string
+    X-Another-Header:
+      description: Ещё один пример пользовательского заголовка
+      schema:
+        type: string
+  schemas:
+    PurchaseReceiptResponse:
+      properties:
+        operationId:
+          type: string
+          format: uuid
+          title: Operationid
+          description: ID операции на стороне Uzum Checkout
+      type: object
+      required:
+        - operationId
+      title: PurchaseReceiptResponse
+    ApiResponse_PurchaseReceiptResponse_:
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Message
+        result:
+          $ref: '#/components/schemas/PurchaseReceiptResponse'
+      type: object
+      required:
+        - errorCode
+      title: ApiResponse[PurchaseReceiptResponse]
+    PurchaseReceiptCartRequest:
+      properties:
+        total:
+          type: integer
+          exclusiveMinimum: 0
+          title: Total
+          description: Общая стоимость корзины
+        items:
+          items:
+            $ref: '#/components/schemas/FiscalizationCartItemRequest'
+          type: array
+          minItems: 1
+          title: Items
+          description: Детальный перечень товаров или услуг, включенных в корзину клиента
+      type: object
+      required:
+        - total
+        - items
+      title: PurchaseReceiptCartRequest
+    PurchaseReceiptRequest:
+      properties:
+        orderId:
+          type: string
+          format: uuid
+          title: Orderid
+          description: Идентификатор заказа
+        cart:
+          allOf:
+            - $ref: '#/components/schemas/PurchaseReceiptCartRequest'
+          description: Корзина для фискализации чека покупки
+      type: object
+      required:
+        - orderId
+        - cart
+      title: PurchaseReceiptRequest
+    UnbindCardCommand:
+      title: UnbindCardCommand
+      required:
+        - bindingId
+      type: object
+      properties:
+        bindingId:
+          title: Binding Id
+          maxLength: 255
+          type: string
+          description: Идентификатор привязки
+    ApiResponse_UnBindCardResponse_:
+      title: ApiResponse[UnBindCardResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          title: Error code
+          type: string
+          description: Код ошибки
+        message:
+          title: Message
+          type: string
+    APIDataFor3DS:
+      title: APIDataFor3DS
+      type: object
+      properties:
+        acsUrl:
+          title: Acsurl
+          type: string
+          description: AcsUrl для прохождения 3DS, если пришел, то открываем форму 3DS
+        paReq:
+          title: Pareq
+          type: string
+          description: >-
+            Сообщение PAReq (base64), параметр этого платежного запроса. Он
+            содержит всю важную информацию о платеже;
+        termUrl:
+          title: Termurl
+          type: string
+          description: URL терминала
+    AcquiringCallbackData:
+      title: AcquiringCallbackData
+      required:
+        - orderId
+        - operationState
+        - operationType
+        - orderNumber
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+        operationState:
+          allOf:
+            - $ref: '#/components/schemas/CallbackOperationState'
+          description: Статус операции
+        operationType:
+          title: Operationtype
+          enum:
+            - AUTHORIZE
+            - COMPLETE
+            - REFUND
+            - REVERSE
+            - TOP_UP_COMPLETED
+          type: string
+          description: Тип операции
+        cardType:
+          title: Card Type
+          description: |
+            Тип карты, используемой для транзакции:
+            * `1` – Корпоративная карта  
+            * `2` – Личная карта
+          type: integer
+          enum:
+            - 1
+            - 2
+        merchantOperationId:
+          title: Merchantoperationid
+          type: string
+          description: >-
+            Уникальный идентификатор операции, заданный на вашей стороне, будет
+            возвращен, если он был указан при инициализации операции.
+        orderNumber:
+          title: Ordernumber
+          type: string
+          description: Уникальный идентификатор заказа, присвоенный на вашей стороне.
+        rrn:
+          title: Rrn
+          type: string
+          description: Уникальный идентификатор банковской операции
+        bindingId:
+          title: Bindingid
+          type: string
+          description: Идентификатор созданной связки при проведении операции
+    AcquiringPaymentParams:
+      title: AcquiringPaymentParams
+      required:
+        - payType
+      type: object
+      properties:
+        operationType:
+          title: Operationtype
+          enum:
+            - PAYMENT
+          type: string
+          description: Тип операции. `"PAYMENT"` -  оплата картой.
+          default: PAYMENT
+        payType:
+          allOf:
+            - $ref: '#/components/schemas/PayType'
+          description: >-
+            Тип платежа: `"ONE_STEP"` для одностадийного и `"TWO_STEP"` для
+            двухстадийного.
+        phoneNumber:
+          title: Phonenumber
+          type: string
+          description: >-
+            Номер телефона клиента в международном формате, например,
+            `'998940202903'`.
+
+
+            Допускается использование номеров из России и Казахстана, как
+            `'79991116921'`, однако при их использовании в рамках
+            автофискализации кэшбэк не начисляется.
+        force3ds:
+          title: Force3Ds
+          type: boolean
+          description: Принудительная отправка платежа на 3DS аутентификацию.
+    ApiResponse_Complete2SPResponse_:
+      title: ApiResponse[Complete2SPResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/Complete2SPResponse'
+    ApiResponse_GetBindingsResponse_:
+      title: ApiResponse[GetBindingsResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/GetBindingsResponse'
+    ApiResponse_GetCertificateFingerprintResponse_:
+      title: ApiResponse[GetCertificateFingerprintResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/GetCertificateFingerprintResponse'
+    ApiResponse_GetCertificateResponse_:
+      title: ApiResponse[GetCertificateResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/GetCertificateResponse'
+    ApiResponse_GetOperationStateResponse_:
+      title: ApiResponse[GetOperationStateResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/GetOperationStateResponse'
+    ApiResponse_GetOperationTypesResponse_:
+      title: ApiResponse[GetOperationTypesResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/GetOperationTypesResponse'
+    ApiResponse_GetOrderStatusResponse_:
+      title: ApiResponse[GetOrderStatusResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/GetOrderStatusResponse'
+    ApiResponse_GetReceiptsResponse_:
+      title: ApiResponse[GetReceiptsResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/GetReceiptsResponse'
+    ApiResponse_MerchantPayResult_:
+      title: ApiResponse[MerchantPayResult]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/MerchantPayResult'
+    ApiResponse_RefundResponse_:
+      title: ApiResponse[RefundResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/RefundResponse'
+    ApiResponse_ReverseResponse_:
+      title: ApiResponse[ReverseResponse]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          $ref: '#/components/schemas/ReverseResponse'
+    ApiResponse_Union_PaymentRegisterResponse__PaymentB2BRegisterResponse__:
+      title: ApiResponse[Union[PaymentRegisterResponse, PaymentB2BRegisterResponse]]
+      required:
+        - errorCode
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          title: Message
+          type: string
+        result:
+          title: Result
+          anyOf:
+            - $ref: '#/components/schemas/PaymentRegisterResponse'
+            - $ref: '#/components/schemas/PaymentB2BRegisterResponse'
+            - $ref: '#/components/schemas/PaymentTechCardRegisterResponse'
+    BindingIPS:
+      title: BindingIPS
+      required:
+        - needCVC
+      type: object
+      properties:
+        name:
+          allOf:
+            - $ref: '#/components/schemas/IPS'
+          default: VISA
+        needCVC:
+          title: Needcvc
+          type: boolean
+    BindingInfoResponse:
+      title: BindingInfoResponse
+      required:
+        - ips
+      type: object
+      properties:
+        bindingId:
+          title: Binding Id
+          maxLength: 255
+          type: string
+          description: Идентификатор привязки
+        maskedPan:
+          title: Masked Pan
+          maxLength: 19
+          type: string
+          description: Masked pan
+        expiryDate:
+          title: Expiry Date
+          maxLength: 6
+          minLength: 6
+          pattern: ^[0-9]*$
+          type: string
+          description: Дата истечения срока привязки YYYYMM
+        ips:
+          $ref: '#/components/schemas/app__api__models__payment__BindingIPS'
+    BindingOperationType:
+      title: BindingOperationType
+      required:
+        - errorCode
+        - enabledTerminal
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        errorCodeDescription:
+          title: Errorcodedescription
+          type: string
+        enabledTerminal:
+          title: Enabledterminal
+          type: boolean
+    BindingPaymentParams:
+      title: BindingPaymentParams
+      required:
+        - operationType
+      type: object
+      properties:
+        operationType:
+          title: Operationtype
+          enum:
+            - BINDING
+          type: string
+          description: Тип операции. `"BINDING"` -  привязка карты.
+        phoneNumber:
+          title: Phonenumber
+          type: string
+          description: Номер телефона клиента.
+    BusinessEvent:
+      title: BusinessEvent
+      required:
+        - orderId
+        - orderNumber
+        - eventType
+        - actionCode
+        - actionCodeDescription
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Идентификатор заказа на стороне Uzum Checkout
+        orderNumber:
+          title: Ordernumber
+          type: string
+          description: Уникальный идентификатор заказа, присвоенный на вашей стороне.
+        eventType:
+          allOf:
+            - $ref: '#/components/schemas/BusinessEventType'
+          description: Тип бизнесс события
+        actionCode:
+          allOf:
+            - $ref: '#/components/schemas/ErrorCode'
+          description: Код события
+        actionCodeDescription:
+          title: Actioncodedescription
+          type: string
+          description: Описание кода события
+    BusinessEventType:
+      title: BusinessEventType
+      enum:
+        - FORM_CLOSED
+      type: string
+      description: An enumeration.
+    CallbackOperationState:
+      title: CallbackOperationState
+      enum:
+        - SUCCESS
+        - FAIL
+      type: string
+      description: An enumeration.
+    Cart:
+      title: Cart
+      required:
+        - cartId
+        - items
+        - total
+      type: object
+      properties:
+        cartId:
+          title: Cartid
+          type: string
+          description: Уникальный идентификатор корзины, присвоенный на вашей стороне.
+        receiptType:
+          allOf:
+            - $ref: '#/components/schemas/RegisterReceiptType'
+          description: Тип фискального чека.
+        items:
+          title: Items
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItemRequest'
+          description: Детальный перечень товаров или услуг, включенных в корзину клиента.
+        total:
+          title: Total
+          type: integer
+          description: Общая стоимость корзины.
+    CartItemRequest:
+      title: CartItemRequest
+      required:
+        - title
+        - productId
+        - quantity
+        - unitPrice
+        - total
+      type: object
+      properties:
+        title:
+          title: Title
+          maxLength: 63
+          type: string
+          description: Наименование товара или услуги.
+        productId:
+          title: Productid
+          type: string
+          description: Идентификатор товара в вашей системе.
+        quantity:
+          title: Quantity
+          type: integer
+          description: Количество товара в заказе.
+        unitPrice:
+          title: Unitprice
+          type: integer
+          description: Цена за единицу товара в минимальных единицах валюты.
+        total:
+          title: Total
+          type: integer
+          description: >-
+            Общая стоимость всех единиц данного типа товара или услуги,
+            рассчитывается как `quantity × unitPrice`.
+        receiptParams:
+          title: Receiptparams
+          allOf:
+            - $ref: '#/components/schemas/UZReceiptParams'
+          description: >-
+            Данные для автофискализации чека. Подробная [информация о
+            фискализации чеков](#section/Fiskalizaciya).
+    Complete2SPCommand:
+      title: Complete2SPCommand
+      required:
+        - orderId
+        - amount
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+          format: uuid
+        amount:
+          title: Amount
+          minimum: 1
+          type: integer
+          description: >-
+            Сумма для подтверждения операции, указанная в минимальных единицах
+            валюты.
+    Complete2SPResponse:
+      title: Complete2SPResponse
+      required:
+        - operationId
+      type: object
+      properties:
+        operationId:
+          title: Operationid
+          type: string
+          description: Уникальный идентификатор операции.
+          format: uuid
+    Currency:
+      title: Currency
+      enum:
+        - 860
+      type: integer
+      description: An enumeration.
+    ErrorCode:
+      title: ErrorCode
+      enum:
+        - 0
+        - 5000
+        - 2000
+        - 1000
+        - 1001
+        - 1002
+        - 1003
+        - 1004
+        - 1005
+        - 1006
+        - 1007
+        - 1008
+        - 1009
+        - 3000
+        - 3001
+        - 3002
+        - 3003
+        - 3004
+        - 3005
+        - 3006
+        - 3007
+        - 3008
+        - 3009
+        - 3010
+        - 3011
+        - 3012
+        - 3013
+        - 3014
+        - 3015
+        - 3016
+        - 3017
+        - 3018
+        - 3019
+        - 3020
+        - 3021
+        - 3022
+        - 3023
+        - 3024
+        - 3025
+        - 3026
+        - 3027
+        - 3028
+        - 3029
+        - 3030
+        - 3031
+        - 3032
+        - 3033
+        - 3034
+        - 3035
+        - 3036
+        - 3037
+        - 3038
+        - 3039
+        - 3040
+        - 3041
+        - 3042
+        - 3043
+        - 3044
+        - 3045
+        - 3046
+        - 3047
+        - 3200
+        - 3201
+        - 3202
+        - 3203
+        - 3204
+        - 3205
+        - 3206
+        - 3207
+        - 3208
+        - 3209
+        - 3210
+        - 3211
+        - 3212
+        - 3401
+        - 3403
+        - 3404
+        - 3405
+      type: integer
+      description: Код ошибки
+    FiscalizationCartItemRequest:
+      title: FiscalizationCartItemRequest
+      required:
+        - productId
+        - quantity
+        - receiptParams
+      type: object
+      properties:
+        productId:
+          title: Productid
+          minLength: 1
+          type: string
+          description: Идентификатор товара в вашей системе.
+        quantity:
+          title: Quantity
+          exclusiveMinimum: 0
+          type: integer
+          description: Количество товара в заказе.
+        receiptParams:
+          title: Receiptparams
+          allOf:
+            - $ref: '#/components/schemas/UZReceiptParams'
+          description: >-
+            Данные для автофискализации чека. Подробная [информация о
+            фискализации чеков](#section/Fiskalizaciya).
+    FiscalizationCartRequest:
+      title: FiscalizationCartRequest
+      required:
+        - total
+        - items
+      type: object
+      properties:
+        total:
+          title: Total
+          exclusiveMinimum: 0
+          type: integer
+          description: Общая стоимость корзины.
+        items:
+          title: Items
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/FiscalizationCartItemRequest'
+          description: Детальный перечень товаров или услуг, включенных в корзину клиента.
+    GetBindingsCommand:
+      title: GetBindingsCommand
+      required:
+        - clientId
+      type: object
+      properties:
+        clientId:
+          title: Clientid
+          type: string
+          description: Уникальный идентификатор клиента в вашей системе.
+    GetBindingsResponse:
+      title: GetBindingsResponse
+      required:
+        - bindings
+      type: object
+      properties:
+        bindings:
+          title: Bindings
+          type: array
+          items:
+            $ref: '#/components/schemas/BindingInfoResponse'
+          description: Привязки карт
+    GetCertificateFingerprintResponse:
+      title: GetCertificateFingerprintResponse
+      required:
+        - fingerprint
+      type: object
+      properties:
+        fingerprint:
+          title: Fingerprint
+          type: string
+          description: Фингерпринт сертификата (base64)
+    GetCertificateResponse:
+      title: GetCertificateResponse
+      required:
+        - certificate
+        - fingerprint
+      type: object
+      properties:
+        certificate:
+          title: Certificate
+          type: string
+          description: Тело сертификата (base64)
+        fingerprint:
+          title: Fingerprint
+          type: string
+          description: Фингерпринт сертификата (base64)
+    GetOperationStateCommand:
+      title: GetOperationStateCommand
+      required:
+        - operationId
+      type: object
+      properties:
+        operationId:
+          title: Operationid
+          type: string
+          description: Уникальный идентификатор операции.
+          format: uuid
+    GetOperationStateResponse:
+      title: GetOperationStateResponse
+      required:
+        - operation
+      type: object
+      properties:
+        operation:
+          $ref: '#/components/schemas/Operation'
+    GetOperationTypesCommand:
+      title: GetOperationTypesCommand
+      type: object
+      properties:
+        phoneNumber:
+          title: Phonenumber
+          maxLength: 12
+          minLength: 12
+          pattern: (998)[0-9]{9}
+          type: string
+          description: Моб. номер телефона.
+    GetOperationTypesResponse:
+      title: GetOperationTypesResponse
+      required:
+        - installment
+        - binding
+        - payment
+      type: object
+      properties:
+        installment:
+          $ref: '#/components/schemas/InstallmentOperationType'
+        binding:
+          $ref: '#/components/schemas/BindingOperationType'
+        payment:
+          $ref: '#/components/schemas/app__api__models__payment__PaymentOperationType'
+    GetOrderStatusCommand:
+      title: GetOrderStatusCommand
+      required:
+        - orderId
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+          format: uuid
+    GetOrderStatusResponse:
+      title: GetOrderStatusResponse
+      required:
+        - orderId
+        - status
+        - merchantOrderId
+        - amount
+        - totalAmount
+        - completedAmount
+        - refundedAmount
+        - reversedAmount
+        - operations
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+          format: uuid
+        status:
+          allOf:
+            - $ref: '#/components/schemas/MerchantPaymentStatus'
+          description: Статус платежа.
+        cardType:
+          title: Card Type
+          description: |
+            Тип карты, используемой для транзакции:
+            * `1` – Корпоративная карта  
+            * `2` – Личная карта
+          type: integer
+          enum:
+            - 1
+            - 2
+        actionCode:
+          title: Actioncode
+          type: integer
+          description: Причина отклонения платежа.
+        merchantOrderId:
+          title: Merchantorderid
+          type: string
+          description: Уникальный идентификатор заказа, присвоенный на вашей стороне.
+        amount:
+          title: Amount
+          type: integer
+          description: >-
+            Сумма, указанная при регистрации платежа, выраженная в минимальных
+            единицах валюты.
+        totalAmount:
+          title: Totalamount
+          type: integer
+          description: Итоговая сумма платежа, выраженная в минимальных единицах валюты.
+        completedAmount:
+          title: Completedamount
+          type: integer
+          description: >-
+            Сумма подтверждения операции, указанная в минимальных единицах
+            валюты.
+        refundedAmount:
+          title: Refundedamount
+          type: integer
+          description: Сумма возврата, выраженная в минимальных единицах валюты.
+        reversedAmount:
+          title: Reversedamount
+          type: integer
+          description: Сумма отмены операции, указанная в минимальных единицах валюты.
+        bindingId:
+          title: Binding Id
+          maxLength: 255
+          type: string
+          description: Идентификатор привязки.
+        operations:
+          title: Operations
+          type: array
+          items:
+            $ref: '#/components/schemas/Operation'
+          description: История операций.
+    GetReceiptRequest:
+      title: GetReceiptRequest
+      required:
+        - orderId
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+          format: uuid
+    GetReceiptResponse:
+      title: GetReceiptResponse
+      required:
+        - receiptUrl
+        - receiptType
+      type: object
+      properties:
+        receiptUrl:
+          title: Receipturl
+          type: string
+          description: Ссылка на чек
+        receiptType:
+          allOf:
+            - $ref: '#/components/schemas/ReceiptType'
+          description: Тип чека, покупка/возврат
+    GetReceiptsResponse:
+      title: GetReceiptsResponse
+      required:
+        - receipts
+      type: object
+      properties:
+        receipts:
+          title: Receipts
+          type: array
+          items:
+            $ref: '#/components/schemas/GetReceiptResponse'
+          description: Выпущенные чеки
+    IPS:
+      title: IPS
+      enum:
+        - MASTERCARD
+        - VISA
+        - MIR
+        - HUMO
+        - UZCARD
+      type: string
+      description: Наименование платежной системы
+    InstallmentOperationType:
+      title: InstallmentOperationType
+      required:
+        - errorCode
+        - installmentPlans
+        - enabledTerminal
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        errorCodeDescription:
+          title: Errorcodedescription
+          type: string
+        userStatus:
+          $ref: '#/components/schemas/InstallmentUserStatus'
+        installmentPlans:
+          title: Installmentplans
+          type: array
+          items:
+            $ref: '#/components/schemas/ShortInstallmentPlan'
+        enabledTerminal:
+          title: Enabledterminal
+          type: boolean
+    InstallmentPaymentParams:
+      title: InstallmentPaymentParams
+      required:
+        - operationType
+      type: object
+      properties:
+        operationType:
+          title: Operationtype
+          enum:
+            - INSTALLMENT
+          type: string
+          description: INSTALLMENT - оплата рассрочкой;
+        phoneNumber:
+          title: Phonenumber
+          type: string
+          description: Номер телефона для пополнения счета.
+    InstallmentUserStatus:
+      title: InstallmentUserStatus
+      enum:
+        - ACTIVE
+        - BLOCKED
+        - NOT_FOUND
+      type: string
+      description: An enumeration.
+    LocaleType:
+      title: LocaleType
+      enum:
+        - ru-RU
+        - uz-UZ
+        - en-EN
+      type: string
+      description: An enumeration.
+    MerchantParams:
+      title: MerchantParams
+      type: object
+      properties:
+        divisionId:
+          title: Divisionid
+          type: string
+          description: Идентификатор подразделения партнера
+        divisionName:
+          title: Divisionname
+          type: string
+          description: Название подразделения партнера
+        cart:
+          title: Cart
+          allOf:
+            - $ref: '#/components/schemas/Cart'
+          description: >-
+            Детализированная информация о содержимом корзины клиента, включая
+            перечень товаров или услуг, их количество и стоимость.
+    MerchantPayCommand:
+      title: MerchantPayCommand
+      required:
+        - processData
+        - orderId
+        - returnUrl
+      type: object
+      properties:
+        processData:
+          title: Processdata
+          oneOf:
+            - $ref: '#/components/schemas/PayByBindCardCommandData'
+            - $ref: '#/components/schemas/PayByCardTokenWithExternalMPICommandData'
+            - $ref: '#/components/schemas/PayByTechCardCommandData'
+          description: Данные способа оплаты.
+          discriminator:
+            propertyName: type
+            mapping:
+              bind: '#/components/schemas/PayByBindCardCommandData'
+              card: '#/components/schemas/PayByCardTokenWithExternalMPICommandData'
+              tech_card: '#/components/schemas/PayByTechCardCommandData'
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+          format: uuid
+        returnUrl:
+          title: Returnurl
+          type: string
+          description: URL для перенаправления после оплаты.
+    MerchantPayResult:
+      title: MerchantPayResult
+      required:
+        - operationId
+        - mdOrder
+      type: object
+      properties:
+        operationId:
+          title: Operationid
+          type: string
+          description: Уникальный идентификатор операции.
+          format: uuid
+        dataFor3ds:
+          title: Datafor3Ds
+          allOf:
+            - $ref: '#/components/schemas/APIDataFor3DS'
+          description: Данные для прохождения 3DS
+        mdOrder:
+          title: Mdorder
+          type: string
+          description: Идентификатор заказа для открытия формы 3DS
+    MerchantPaymentStatus:
+      title: MerchantPaymentStatus
+      enum:
+        - REGISTERED
+        - AUTHORIZED
+        - COMPLETED
+        - TOP_UP_COMPLETED
+        - REFUNDED
+        - REVERSED
+        - DECLINED
+      type: string
+      description: An enumeration.
+    MobileTopUpCartItemRequest:
+      title: MobileTopUpCartItemRequest
+      required:
+        - title
+        - productId
+        - quantity
+        - unitPrice
+        - total
+        - receiptParams
+      type: object
+      properties:
+        title:
+          title: Title
+          maxLength: 63
+          type: string
+          description: Наименование товара или услуги.
+        productId:
+          title: Productid
+          type: string
+          description: Идентификатор товара в вашей системе.
+        quantity:
+          title: Quantity
+          type: integer
+          description: Количество товара в заказе.
+        unitPrice:
+          title: Unitprice
+          type: integer
+          description: Цена за единицу товара в минимальных единицах валюты.
+        total:
+          title: Total
+          type: integer
+          description: >-
+            Общая стоимость всех единиц данного типа товара или услуги,
+            рассчитывается как `quantity × unitPrice`.
+        receiptParams:
+          title: Receiptparams
+          allOf:
+            - $ref: '#/components/schemas/UZReceiptParams'
+          description: >-
+            Данные для автофискализации чека. Подробная [информация о
+            фискализации чеков](#section/Fiskalizaciya).
+    MobileTopUpCartRequest:
+      title: MobileTopUpCartRequest
+      required:
+        - cartId
+        - receiptType
+        - items
+        - total
+      type: object
+      properties:
+        cartId:
+          title: Cartid
+          type: string
+          description: Уникальный идентификатор корзины, присвоенный на вашей стороне.
+        receiptType:
+          allOf:
+            - $ref: '#/components/schemas/RegisterReceiptType'
+          description: Тип фискального чека.
+        items:
+          title: Items
+          type: array
+          items:
+            $ref: '#/components/schemas/MobileTopUpCartItemRequest'
+          description: Детальный перечень товаров или услуг, включенных в корзину клиента.
+        total:
+          title: Total
+          type: integer
+          description: Общая стоимость корзины.
+    MobileTopUpMerchantParams:
+      title: MobileTopUpMerchantParams
+      type: object
+      properties:
+        cart:
+          title: Cart
+          allOf:
+            - $ref: '#/components/schemas/MobileTopUpCartRequest'
+          description: >-
+            Детализированная информация о содержимом корзины клиента, включая
+            перечень товаров или услуг, их количество и стоимость.
+    MobileTopUpPaymentParams:
+      title: MobileTopUpPaymentParams
+      required:
+        - operationType
+        - phoneNumber
+      type: object
+      properties:
+        operationType:
+          title: Operationtype
+          enum:
+            - MOBILE_TOP_UP
+          type: string
+          description: MOBILE_TOP_UP - пополнение баланса мобильного телефона;
+        phoneNumber:
+          title: Phonenumber
+          type: string
+          description: Номер телефона клиента.
+    Operation:
+      title: Operation
+      required:
+        - operationId
+        - startAt
+        - operationType
+        - state
+      type: object
+      properties:
+        operationId:
+          title: Operationid
+          type: string
+          description: Уникальный идентификатор операции.
+          format: uuid
+        merchantOperationId:
+          title: Merchantoperationid
+          type: string
+          description: Уникальный идентификатор операции, присвоенный на вашей стороне.
+          format: uuid
+        startAt:
+          title: Startat
+          type: string
+          description: Время начала операции.
+          format: date-time
+        doneAt:
+          title: Doneat
+          type: string
+          description: Время окончания операции.
+          format: date-time
+        operationType:
+          allOf:
+            - $ref: '#/components/schemas/app__enums__payment__PaymentOperationType'
+          description: Тип операции.
+        state:
+          allOf:
+            - $ref: '#/components/schemas/PaymentOperationState'
+          description: Состояние операции.
+        rrn:
+          title: Rrn
+          type: string
+          description: RRN операции.
+        actionCodeDescription:
+          title: Actioncodedescription
+          type: string
+          description: Причина отклонения платежа.
+    OrderBingingRequest:
+      title: OrderBingingRequest
+      required:
+        - viewType
+        - clientId
+        - currency
+        - orderNumber
+        - sessionTimeoutSecs
+        - paymentParams
+      type: object
+      properties:
+        successUrl:
+          title: Successurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: URL для редиректа после успешного прохождения платежа.
+          format: uri
+        failureUrl:
+          title: Failureurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: URL для редиректа в случае ошибки платежа.
+          format: uri
+        viewType:
+          allOf:
+            - $ref: '#/components/schemas/PaymentViewType'
+          description: >-
+            Метод отображения платежной страницы в процессе совершения
+            онлайн-платежа.
+        clientId:
+          title: Clientid
+          minLength: 1
+          type: string
+          description: Уникальный идентификатор клиента в вашей системе.
+        currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+          description: >-
+            Валюта платежа, указываемая в соответствии с международным
+            стандартом ISO 4217.
+
+
+            860 - узбекский сум.
+        paymentDetails:
+          title: Paymentdetails
+          maxLength: 1024
+          type: string
+          description: Детали платежа.
+        orderNumber:
+          title: Ordernumber
+          maxLength: 36
+          minLength: 1
+          type: string
+          description: Идентификатор заказа в вашей системе.
+        sessionTimeoutSecs:
+          title: Sessiontimeoutsecs
+          maximum: 1800
+          minimum: 600
+          type: integer
+          description: Максимальная продолжительность сессии в секундах.
+        paymentParams:
+          title: Paymentparams
+          allOf:
+            - $ref: '#/components/schemas/BindingPaymentParams'
+          description: Дополнительные параметры платежа.
+    OrderInstallmentRequest:
+      title: OrderInstallmentRequest
+      required:
+        - viewType
+        - clientId
+        - currency
+        - orderNumber
+        - sessionTimeoutSecs
+        - amount
+        - merchantParams
+        - paymentParams
+      type: object
+      properties:
+        successUrl:
+          title: Successurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: URL для редиректа после успешного прохождения платежа.
+          format: uri
+        failureUrl:
+          title: Failureurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: URL для редиректа в случае ошибки платежа.
+          format: uri
+        viewType:
+          allOf:
+            - $ref: '#/components/schemas/PaymentViewType'
+          description: ''
+        clientId:
+          title: Clientid
+          minLength: 1
+          type: string
+          description: Уникальный идентификатор клиента в вашей системе.
+        currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+          description: >-
+            Валюта платежа, указываемая в соответствии с международным
+            стандартом ISO 4217.
+
+
+            860 - узбекский сум.
+        paymentDetails:
+          title: Paymentdetails
+          maxLength: 1024
+          type: string
+          description: Детали платежа.
+        orderNumber:
+          title: Ordernumber
+          maxLength: 36
+          minLength: 1
+          type: string
+          description: Идентификатор платежа на стороне партнера
+        sessionTimeoutSecs:
+          title: Sessiontimeoutsecs
+          maximum: 1800
+          minimum: 600
+          type: integer
+          description: Максимальная продолжительность сессии в секундах.
+        amount:
+          title: Amount
+          exclusiveMaximum: 999999999999
+          minimum: 1
+          type: integer
+          description: >-
+            Сумма платежа, выраженная в минимальных единицах валюты и без учета
+            комиссии.
+        merchantParams:
+          title: Merchantparams
+          allOf:
+            - $ref: '#/components/schemas/MerchantParams'
+          description: >-
+            Дополнительные параметры, необходимые для осуществления
+            одностадийного платежа с автоматической фискализацией.
+        paymentParams:
+          title: Paymentparams
+          allOf:
+            - $ref: '#/components/schemas/InstallmentPaymentParams'
+          description: Дополнительные параметры платежа.
+    OrderMobileTopUpRegisterRequest:
+      title: OrderMobileTopUpRegisterRequest
+      required:
+        - clientId
+        - currency
+        - orderNumber
+        - sessionTimeoutSecs
+        - amount
+        - merchantParams
+        - paymentParams
+      type: object
+      properties:
+        clientId:
+          title: Clientid
+          minLength: 1
+          type: string
+          description: Уникальный идентификатор клиента в вашей системе..
+        currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+          description: >-
+            Валюта платежа, указываемая в соответствии с международным
+            стандартом ISO 4217.
+
+
+            860 - узбекский сум.
+        paymentDetails:
+          title: Paymentdetails
+          maxLength: 1024
+          type: string
+          description: Детали платежа.
+        orderNumber:
+          title: Ordernumber
+          maxLength: 36
+          minLength: 1
+          type: string
+          description: Идентификатор заказа в вашей системе.
+        sessionTimeoutSecs:
+          title: Sessiontimeoutsecs
+          maximum: 1800
+          minimum: 600
+          type: integer
+          description: Максимальная продолжительность сессии в секундах.
+        amount:
+          title: Amount
+          exclusiveMaximum: 999999999999
+          minimum: 1
+          type: integer
+          description: >-
+            Сумма пополнения баланса (в минимальных единицах валюты, без
+            комиссии)
+        merchantParams:
+          title: Merchantparams
+          allOf:
+            - $ref: '#/components/schemas/MobileTopUpMerchantParams'
+          description: >-
+            Дополнительные параметры, необходимые для осуществления
+            одностадийного платежа с автоматической фискализацией.
+        paymentParams:
+          title: Paymentparams
+          allOf:
+            - $ref: '#/components/schemas/MobileTopUpPaymentParams'
+          description: Дополнительные параметры платежа.
+    OrderPaymentRequest:
+      title: OrderPaymentRequest
+      required:
+        - viewType
+        - clientId
+        - currency
+        - orderNumber
+        - sessionTimeoutSecs
+        - amount
+        - paymentParams
+      type: object
+      properties:
+        successUrl:
+          title: Successurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: URL для редиректа после успешного прохождения платежа.
+          format: uri
+        failureUrl:
+          title: Failureurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: URL для редиректа в случае ошибки платежа.
+          format: uri
+        viewType:
+          allOf:
+            - $ref: '#/components/schemas/PaymentViewType'
+          description: >-
+            Метод отображения платежной страницы в процессе совершения
+            онлайн-платежа.
+        clientId:
+          title: Clientid
+          minLength: 1
+          type: string
+          description: Уникальный идентификатор клиента в вашей системе.
+        currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+          description: >-
+            Валюта платежа, указываемая в соответствии с международным
+            стандартом ISO 4217.
+
+
+            860 - узбекский сум.
+        paymentDetails:
+          title: Paymentdetails
+          maxLength: 1024
+          type: string
+          description: Детали платежа.
+        orderNumber:
+          title: Ordernumber
+          maxLength: 36
+          minLength: 1
+          type: string
+          description: Идентификатор заказа в вашей системе.
+        sessionTimeoutSecs:
+          title: Sessiontimeoutsecs
+          maximum: 1800
+          minimum: 600
+          type: integer
+          description: Максимальная продолжительность сессии в секундах.
+        amount:
+          title: Amount
+          exclusiveMaximum: 999999999999
+          minimum: 1
+          type: integer
+          description: >-
+            Сумма платежа, выраженная в минимальных единицах валюты и без учета
+            комиссии.
+        merchantParams:
+          title: Merchantparams
+          allOf:
+            - $ref: '#/components/schemas/MerchantParams'
+          description: >-
+            Дополнительные параметры, необходимые для осуществления
+            одностадийного платежа с автоматической фискализацией.
+        paymentParams:
+          title: Paymentparams
+          allOf:
+            - $ref: '#/components/schemas/AcquiringPaymentParams'
+          description: Дополнительные параметры платежа.
+    OrderTechCardRequest:
+      title: OrderTechCardRequest
+      required:
+        - clientId
+        - amount
+        - currency
+        - orderNumber
+        - paymentParams
+        - sessionTimeoutSecs
+      type: object
+      properties:
+        clientId:
+          title: Clientid
+          minLength: 1
+          type: string
+          description: Идентификатор клиента
+        amount:
+          title: Amount
+          exclusiveMaximum: 999999999999
+          minimum: 1
+          type: integer
+          description: >-
+            Сумма платежа, выраженная в минимальных единицах валюты и без учета
+            комиссии.
+        currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+          description: >-
+            Валюта платежа, указываемая в соответствии с международным
+            стандартом ISO 4217.
+
+
+            860 - узбекский сум.
+        orderNumber:
+          title: Ordernumber
+          maxLength: 36
+          minLength: 1
+          type: string
+          description: Идентификатор заказа в вашей системе.
+        paymentParams:
+          title: Paymentparams
+          allOf:
+            - $ref: '#/components/schemas/TechCardParams'
+          description: Дополнительные параметры платежа.
+        sessionTimeoutSecs:
+          title: Sessiontimeoutsecs
+          maximum: 1800
+          minimum: 600
+          type: integer
+          description: Максимальная продолжительность сессии в секундах.
+    PayByBindCardCommandData:
+      title: PayByBindCardCommandData
+      required:
+        - type
+        - bindingId
+      type: object
+      properties:
+        type:
+          title: Type
+          enum:
+            - bind
+          type: string
+        cvc:
+          title: Cvc
+          pattern: ^\d{3}$
+          type: string
+          description: CVC карты.
+        bindingId:
+          title: Bindingid
+          minLength: 1
+          type: string
+          description: >-
+            Идентификатор связки созданной при оплате заказа или использованной
+            для оплаты.
+    PayByCardTokenWithExternalMPICommandData:
+      title: PayByCardTokenWithExternalMPICommandData
+      required:
+        - type
+        - aesToken
+        - cardToken
+        - certificateFingerprint
+        - needBindCard
+      type: object
+      properties:
+        type:
+          title: Type
+          enum:
+            - card
+          type: string
+        aesToken:
+          title: Aestoken
+          minLength: 1
+          type: string
+          description: Пара <init. vector> (base64)
+        cardToken:
+          title: Cardtoken
+          minLength: 1
+          type: string
+          description: Зашифрованное JSON-сообщение с данными карты (base64)
+        certificateFingerprint:
+          title: Certificatefingerprint
+          minLength: 1
+          type: string
+          description: Fingerprint сертификата (base64)
+        needBindCard:
+          title: Needbindcard
+          type: boolean
+          description: Идентификатор для создания привязки
+        externalMpi:
+          title: Externalmpi
+          allOf:
+            - $ref: '#/components/schemas/ExternalMPI'
+          description: Параметры 3DS на внешнем MPI
+    ExternalMPI:
+      title: ExternalMPI
+      type: object
+      properties:
+        dsTransId:
+          title: Dstransid
+          type: string
+          description: 3DS 2.0 UUID транзакции в directory server
+        cavv:
+          title: Cavv
+          type: string
+          description: Cardholder Authentication Verification Value
+        flowType:
+          title: flowType
+          enum:
+            - CHALLENGE
+            - FRICTIONLESS
+          type: string
+          description: 3DS 2.0 тип флоу аутентификации
+        aresStatus:
+          title: aresStatus
+          enum:
+            - 'Y'
+            - 'N'
+            - U
+            - A
+            - C
+            - D
+            - R
+            - I
+          type: string
+          description: 3DS 2.0 Статус ответа authentication (ARes)
+        xid:
+          title: Xid
+          type: string
+          description: 3DS 1.x Идентификатор транзакции в 3DS-сервере
+    PayByTechCardCommandData:
+      title: PayByTechCardCommandData
+      required:
+        - type
+        - techCardId
+      type: object
+      properties:
+        type:
+          title: Type
+          enum:
+            - tech_card
+          type: string
+        techCardId:
+          title: Techcardid
+          type: integer
+          description: Идентификатор технической карты
+        tariffPlan:
+          title: Tariffplan
+          type: string
+          description: Тарифный план рассрочки
+        subMerchant:
+          title: Submerchant
+          allOf:
+            - $ref: '#/components/schemas/SubMerchant'
+          description: Информация о саб-партнере
+    PayType:
+      title: PayType
+      enum:
+        - ONE_STEP
+        - TWO_STEP
+      type: string
+      description: An enumeration.
+    PaymentB2BRegisterResponse:
+      title: PaymentB2BRegisterResponse
+      required:
+        - orderId
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+          format: uuid
+    PaymentOperationState:
+      title: PaymentOperationState
+      enum:
+        - IN_PROGRESS
+        - SUCCESS
+        - FAIL
+      type: string
+      description: An enumeration.
+    PaymentRegisterResponse:
+      title: PaymentRegisterResponse
+      required:
+        - orderId
+        - paymentRedirectUrl
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+          format: uuid
+        paymentRedirectUrl:
+          title: Paymentredirecturl
+          type: string
+          description: URL платежной страницы.
+    PaymentTechCardRegisterResponse:
+      title: PaymentTechCardRegisterResponse
+      required:
+        - orderId
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+          format: uuid
+    PaymentViewType:
+      title: PaymentViewType
+      enum:
+        - WEB_VIEW
+        - IFRAME
+        - REDIRECT
+      type: string
+      description: An enumeration.
+    ReceiptGeneratedCallbackData:
+      title: ReceiptGeneratedCallbackData
+      required:
+        - orderId
+        - receiptType
+        - receiptUrl
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+        receiptType:
+          allOf:
+            - $ref: '#/components/schemas/ReceiptType'
+          description: Тип чека
+        receiptUrl:
+          title: Receipturl
+          type: string
+          description: Ссылка на чек
+    ReceiptType:
+      title: ReceiptType
+      enum:
+        - PURCHASE
+        - PREPAID
+        - REFUND
+      type: string
+      description: An enumeration.
+    RefundRequest:
+      title: RefundRequest
+      required:
+        - orderId
+        - amount
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+          format: uuid
+        amount:
+          title: Amount
+          minimum: 1
+          type: integer
+          description: Сумма возврата, выраженная в минимальных единицах валюты.
+        cart:
+          title: Cart
+          allOf:
+            - $ref: '#/components/schemas/FiscalizationCartRequest'
+          description: >-
+            Корзина для возврата. Используется исключительно для одностадийных
+            платежей с автофискализацией.
+    RefundResponse:
+      title: RefundResponse
+      required:
+        - operationId
+      type: object
+      properties:
+        operationId:
+          title: Operationid
+          type: string
+          description: Уникальный идентификатор операции.
+          format: uuid
+    RegisterReceiptType:
+      title: RegisterReceiptType
+      enum:
+        - PURCHASE
+        - PREPAID
+      type: string
+      description: An enumeration.
+    ReverseCommand:
+      title: ReverseCommand
+      required:
+        - orderId
+        - amount
+      type: object
+      properties:
+        orderId:
+          title: Orderid
+          type: string
+          description: Уникальный идентификатор платежа.
+          format: uuid
+        amount:
+          title: Amount
+          minimum: 1
+          type: integer
+          description: Сумма отмены, выраженная в минимальных единицах валюты.
+    ReverseResponse:
+      title: ReverseResponse
+      required:
+        - operationId
+      type: object
+      properties:
+        operationId:
+          title: Operationid
+          type: string
+          description: Уникальный идентификатор операции.
+          format: uuid
+    ShortInstallmentPlan:
+      title: ShortInstallmentPlan
+      required:
+        - name
+        - months
+        - availableBalance
+        - isAvailable
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Название тарифного плана
+        months:
+          title: Months
+          type: string
+          description: Количество месяцев
+        availableBalance:
+          title: Availablebalance
+          type: integer
+          description: Доступный лимит в рамках доступного плана
+        isAvailable:
+          title: Isavailable
+          type: boolean
+          description: Доступность клиенту
+    SubMerchant:
+      title: SubMerchant
+      type: object
+      properties:
+        id:
+          title: Id
+          type: string
+          description: ID саб-партнера
+        tinPinfl:
+          title: Tinpinfl
+          type: string
+          description: ИНН/ПИНФЛ саб-партнера
+        account:
+          title: Account
+          type: string
+          description: Номер расчетного счета саб-партнера
+        MFO:
+          title: Mfo
+          type: string
+          description: МФО Банка саб-партнера
+        name:
+          title: Name
+          type: string
+          description: Наименование саб-партнера
+    TechCardParams:
+      title: TechCardParams
+      required:
+        - operationType
+      type: object
+      properties:
+        operationType:
+          title: Operationtype
+          enum:
+            - TECH_CARD
+          type: string
+          description: TECH_CARD - оплата технической картой рассрочки;
+        phoneNumber:
+          title: Phonenumber
+          type: string
+          description: Номер телефона клиента.
+    UZReceiptParams:
+      title: UZReceiptParams
+      required:
+        - spic
+        - packageCode
+        - vatPercent
+      type: object
+      properties:
+        spic:
+          title: Spic
+          maxLength: 17
+          minLength: 17
+          type: string
+          description: Код ИКПУ.
+        packageCode:
+          title: Packagecode
+          maxLength: 20
+          minLength: 1
+          type: string
+          description: Код упаковки.
+        vatPercent:
+          title: Vatpercent
+          exclusiveMaximum: 100
+          minimum: 0
+          type: integer
+          description: Ставка НДС %.
+        TIN:
+          title: Tin
+          maxLength: 9
+          minLength: 1
+          type: string
+          description: >-
+            ИНН комитента. Обязателен, если не указан PINFL. Не допускается
+            одновременное заполнение ИНН и PINFL.
+        PINFL:
+          title: Pinfl
+          maxLength: 14
+          minLength: 1
+          type: string
+          description: >-
+            ПИНФЛ комитента. Обязателен, если не указан ИНН. Не допускается
+            одновременное заполнение ПИНФЛ и ИНН.
+        discount:
+          title: Discount
+          exclusiveMinimum: 0
+          type: integer
+          description: Сумма скидки в минимальных единицах валюты.
+        voucher:
+          title: Voucher
+          exclusiveMinimum: 0
+          type: integer
+          description: Скидка маркетплейса в минимальных единицах валюты
+        labels:
+          title: Labels
+          type: array
+          items:
+            type: string
+          description: >-
+            Массив кодов маркировки товара. Колличество кодов должно
+            соответствовать количеству единиц маркируемого товара в корзине
+      description: Данные для автофискализации в Уб
+    UnitMeasure:
+      title: UnitMeasure
+      enum:
+        - PC
+        - KG
+        - TN
+      type: string
+      description: An enumeration.
+    app__api__models__payment__BindingIPS:
+      title: BindingIPS
+      type: object
+      properties:
+        name:
+          allOf:
+            - $ref: '#/components/schemas/IPS'
+          default: VISA
+    app__api__models__payment__PaymentOperationType:
+      title: PaymentOperationType
+      required:
+        - errorCode
+        - enabledOneStep
+        - enabledTwoStep
+      type: object
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/ErrorCode'
+        errorCodeDescription:
+          title: Errorcodedescription
+          type: string
+        enabledOneStep:
+          title: Enabledonestep
+          type: boolean
+        enabledTwoStep:
+          title: Enabledtwostep
+          type: boolean
+    app__enums__payment__PaymentOperationType:
+      title: PaymentOperationType
+      enum:
+        - AUTHORIZE
+        - COMPLETE
+        - REFUND
+        - REVERSE
+      type: string
+      description: An enumeration.
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+tags:
+  - name: Тестирование
+    description: |
+
+      Для тестирования доступны карты HUMO и Uzcard.
+      - **HUMO**: `9860 0901 0121 9724`, *exp* `10/26`, *3-DS:* `777777`
+      - **UzCard**: `8600 3129 2957 7175`, *exp* `09/26`, *3-DS:* `777777`
+  - name: Коды ошибок
+    description: >-
+      Код ошибки | Описание
+
+      --- | ----
+
+      0  | Операция выполнена успешно
+
+      <b>1xxx</b> | <b>Ошибки аутентификации</b>
+
+      1001 | Недействительный токен UzumId
+
+      1006 | Ошибка доступа: недостаточно прав для выполнения операции
+
+      <b>2xxx</b> | <b>Ошибки в данных API-запроса</b>
+
+      2000 | Неверный формат данных: ValidationError
+
+      <b>3xxx</b> | <b>Ошибки при обработке платежа</b>
+
+      3000 | Некорректный статус платежа: выполнение данной операции невозможно
+      в текущем статусе
+
+      3001 | Терминал с указанным terminalId не найден
+
+      3002 | Некорректная сумма, валюта или комиссия
+
+      3003 | Некорректные параметры корзины товаров
+
+      3004 | Терминал не поддерживает этот тип платежа (ONE_STEP / TWO_STEP)
+
+      3005 | Платеж с указанным paymentId не найден
+
+      3006 | Привязка с указанным bindingId не найдена
+
+      3007 | Некорректные реквизиты карты. Неверный код MCC
+
+      3008 | Недостаточно средств на счёте
+
+      3009 | Отклонено антифрод-системой
+
+      3010 | Оплата по данной карте невозможна из-за санкций или других
+      ограничений
+
+      3011 | Операция отклонена банком-эмитентом
+
+      3012 | Превышен лимит на количество транзакций
+
+      3013 | Сумма платежа превышает установленный лимит
+
+      3014 | MCC отсутствует в списке разрешённых
+
+      3015 | Транзакции по картам указанной платёжной системы запрещены
+
+      3016 | Ошибка дешифрования: сертификат не найден или AES токен не найден
+
+      3019 | Некорректная сумма для отмены платежа
+
+      3020 | Истёк срок для отмены платежа
+
+      3021 | Некорректная сумма для возврата
+
+      3022 | Истёк срок для возврата
+
+      3023 | Партнёр не найден
+
+      3024 | BIN не найден
+
+      3025 | Шифрование запрещено
+
+      3026 | Ошибка валидации формы платежа
+
+      3027 | Платеж с таким номером заказа уже существует
+
+      3028 | Операция уже существует
+
+      3029 | Время действия платёжных данных истекло
+
+      3030 | Операция COPMPLETE недоступна для одностадийного платежа
+
+      3034 | Одностадийные платежи запрещены
+
+      3035 | Операция не найдена
+
+      3036 | Невозможно выполнить отмену одностадийного платежа
+
+      3037 | На терминале отсутствуют необходимые настройки для проведения
+      платежа
+
+      3038 | Невозможно вызвать операцию COMPLETE для BINDING
+
+      3039 | Невозможно вызвать операцию REVERSE для BINDING
+
+      3040 | 3DS не поддерживается
+
+      3041 | Время сессии истекло
+
+      3042 | Пользователь закрыл форму оплаты
+
+      3043 | Невозможно провести платеж. Возможны ошибки на стороне процессинга
+
+      3045 | Не передана корзина для автоматической фискализации возврата
+
+      3046 | Товар в корзине не прошёл валидацию при автоматической фискализации
+      возврата
+
+      3047 | Неизвестный тип платежа
+
+      3048 | Партнер не активен
+
+      3049 | Процессинг не отвечает 
+
+      3050 | Ошибка конфигурации МПС/НПС. Неизвестный МПС/НПС
+
+      3051 | Ошибка при прохождении 3DS
+
+      3052 | Ошибка настройки МПС/НПС. Неизвестный МПС/НПС
+
+      3053 | Количество маркируемых товаров в корзине не соответствует
+      количеству кодов маркировки
+
+      3054 | В массиве кодов маркировки обнаружены дубликаты
+
+      3055 | Некорректная ставка НДС или код ИКПУ, упаковки, маркировки 
+
+      3056 | Партнер не настроен
+
+      3057 | Ошибка прохождения 3DS на внешнем MPI
+
+      3058 | Для проведения автофискализации не требуется корзина
+
+      3059 | Некорректная итоговая сумма корзины.
+
+      3060 | Партнер заблокирован
+
+      <b>34xx</b> | <b>Ошибки при оплате мобильной связи</b>     
+
+      3401 | Неправильный способ оплаты мобильной связи, оплата возможна только
+      по привязке
+
+      3404 | Платеж на оплату мобильной связи заблокирован. Повторите запрос
+      позже
+
+      3405 | Номер карты для информирования не соответствует номеру учетной
+      записи, либо услуга SMS-информирования не подключена
+
+      <b>5xxx</b> | <b>Технические ошибки</b>
+
+      5000 | Internal Error
+  - name: Post Messages
+    description: >
+      JSON объект будет состоять из трех обязательных полей: `status`, `action`
+      и `errorCode`. Кроме того, может присутствовать необязательное поле
+      `payment_id`.
+
+
+      - Поле `status` будет содержать одно из трех возможных значений:
+      `SUCCESS`, `CANCEL` или `ERROR`. Это показывает, на каком состоянии
+      пользователь завершил работу. Например, если пользователь успешно завершил
+      работу, значение поля `status` будет `SUCCESS`.
+
+
+      - Поле `action` будет иметь только одно возможное значение - `close`. Это
+      означает, что после того, как статус будет отправлен, родительский
+      компонент должен закрыть iframe или webview.
+
+
+      - Поле `errorCode` будет содержать числовой идентификатор ошибки.
+
+
+      Пример JSON объекта:
+
+      ```
+
+      {
+        "status": "SUCCESS",
+        "action": "close",
+        "payment_id": "1234567890",
+        "errorCode": 0
+      }
+
+      ```
+
+      Следовательно, родительский компонент, получающий это сообщение, должен
+      проверить значение поля `status` и выполнить соответствующие действия в
+      зависимости от этого статуса, после чего закрыть `iframe` или `webview`.
