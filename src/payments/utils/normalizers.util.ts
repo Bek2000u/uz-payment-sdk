@@ -85,6 +85,12 @@ export const firstDefined = <T>(...values: Array<T | undefined | null>): T | und
   return values.find(value => value !== undefined && value !== null);
 };
 
+const isSuccessfulResultStatus = (
+  status: NormalizedPaymentStatus,
+): boolean => {
+  return !['failed', 'cancelled', 'unknown'].includes(status);
+};
+
 export function buildPaymentResult<
   TProvider extends PaymentProviderId,
   TRaw = unknown,
@@ -121,11 +127,13 @@ export function buildPaymentResult<
   message?: string;
   raw?: TRaw;
 }): PaymentResult<TRaw, TProvider> {
+  const normalizedStatus = normalizePaymentStatus(status);
+
   return {
-    success: true,
+    success: isSuccessfulResultStatus(normalizedStatus),
     provider,
     transactionId,
-    status: normalizePaymentStatus(status),
+    status: normalizedStatus,
     paymentUrl,
     amount,
     currency,

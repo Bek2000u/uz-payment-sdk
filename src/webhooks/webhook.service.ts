@@ -224,19 +224,14 @@ export class WebhookService {
     const action = Number(payload.action);
     const errorCode = Number(payload.error || 0);
     const providerPaymentId = String(payload.click_trans_id);
-    const providerInvoiceId =
-      payload.merchant_prepare_id !== undefined
-        ? String(payload.merchant_prepare_id)
-        : undefined;
 
     return {
       provider: 'click',
-      transactionId: providerInvoiceId || providerPaymentId,
+      transactionId: providerPaymentId,
       orderId: String(payload.merchant_trans_id),
       amount: fromProviderAmount(Number(payload.amount)) || 0,
       status: this.mapClickWebhookStatus(action, errorCode),
       timestamp: this.toIsoTimestamp(payload.sign_time),
-      providerInvoiceId,
       providerPaymentId,
       providerStatus: errorCode === 0 ? String(action) : String(errorCode),
       metadata: {
@@ -244,6 +239,10 @@ export class WebhookService {
         signTime: payload.sign_time,
         errorCode,
         errorNote: payload.error_note,
+        merchantPrepareId:
+          payload.merchant_prepare_id !== undefined
+            ? String(payload.merchant_prepare_id)
+            : undefined,
       },
       signature,
     };
@@ -257,17 +256,21 @@ export class WebhookService {
       throw new Error('Invalid Payme webhook signature');
     }
 
-    const transactionId = String(payload.params.id || payload.id || 'unknown');
-    const orderId = this.extractPaymeOrderId(payload.params.account) || transactionId;
+    const orderId =
+      this.extractPaymeOrderId(payload.params.account) ||
+      String(payload.params.id || 'unknown');
+    const providerPaymentId =
+      payload.params.id !== undefined ? String(payload.params.id) : undefined;
+    const transactionId = providerPaymentId || orderId;
 
     return {
       provider: 'payme',
       transactionId,
       orderId,
-      amount: fromProviderAmount(payload.params.amount),
+      amount: fromProviderAmount(payload.params.amount) || 0,
       status: this.mapPaymeWebhookStatus(payload.method),
       timestamp: this.toIsoTimestamp(payload.params.time),
-      providerPaymentId: transactionId,
+      providerPaymentId,
       providerStatus: payload.method,
       metadata: {
         jsonRpcId: payload.id ?? null,

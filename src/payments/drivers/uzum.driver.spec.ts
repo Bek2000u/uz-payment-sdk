@@ -75,7 +75,7 @@ describe('UzumDriver', () => {
     expect(result.status).toBe('pending');
     expect(result.paymentUrl).toBe('https://checkout.uzum.test/pay/order-1');
     expect(result.amount).toBe(1500);
-    expect(result.providerPaymentId).toBe('fb584fdb-48d4-4b50-a7da-f15b9a7ef111');
+    expect(result.providerInvoiceId).toBe('fb584fdb-48d4-4b50-a7da-f15b9a7ef111');
     expect(result.checkoutReference).toBe('fb584fdb-48d4-4b50-a7da-f15b9a7ef111');
     expect(result.providerStatus).toBe('REGISTERED');
     expect(typeof result.expiresAt).toBe('string');
@@ -121,8 +121,18 @@ describe('UzumDriver', () => {
     expect(result.orderId).toBe('order-1');
     expect(result.status).toBe('pending');
     expect(result.amount).toBe(1500);
+    expect(result.providerInvoiceId).toBe('fb584fdb-48d4-4b50-a7da-f15b9a7ef111');
     expect(result.providerPaymentId).toBe('operation-1');
+    expect(result.checkoutReference).toBe('fb584fdb-48d4-4b50-a7da-f15b9a7ef111');
     expect(result.providerStatus).toBe('REGISTERED');
+    expect(result.metadata).toEqual(
+      expect.objectContaining({
+        bindingId: undefined,
+        completedAmount: 0,
+        refundedAmount: 0,
+        reversedAmount: 0,
+      }),
+    );
   });
 
   it('checks operation state when operation id is provided', async () => {
@@ -151,8 +161,15 @@ describe('UzumDriver', () => {
       }),
     );
     expect(result.status).toBe('success');
+    expect(result.providerInvoiceId).toBeUndefined();
     expect(result.providerPaymentId).toBe('operation-2');
     expect(result.providerStatus).toBe('SUCCESS');
+    expect(result.checkoutReference).toBeUndefined();
+    expect(result.metadata).toEqual(
+      expect.objectContaining({
+        rrn: undefined,
+      }),
+    );
   });
 
   it('requests reverse with X-Operation-Id idempotency header', async () => {
@@ -186,9 +203,12 @@ describe('UzumDriver', () => {
       }),
     );
     expect(result.status).toBe('cancelled');
+    expect(result.success).toBe(false);
     expect(result.transactionId).toBe('refund-operation-1');
     expect(result.amount).toBe(1500);
+    expect(result.providerInvoiceId).toBe('order-1');
     expect(result.providerPaymentId).toBe('refund-operation-1');
+    expect(result.checkoutReference).toBe('order-1');
     expect(result.providerStatus).toBe('REVERSED');
   });
 });

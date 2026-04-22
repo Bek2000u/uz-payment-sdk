@@ -127,13 +127,17 @@ describe('WebhookService', () => {
     expect(parsed).toEqual(
       expect.objectContaining({
         provider: 'click',
-        transactionId: 'invoice-7',
+        transactionId: 'click-payment-1',
         orderId: 'order-1',
         amount: 1250,
         status: 'success',
-        providerInvoiceId: 'invoice-7',
         providerPaymentId: 'click-payment-1',
         providerStatus: '1',
+      }),
+    );
+    expect(parsed.metadata).toEqual(
+      expect.objectContaining({
+        merchantPrepareId: 'invoice-7',
       }),
     );
   });
@@ -165,6 +169,40 @@ describe('WebhookService', () => {
         status: 'success',
         providerPaymentId: 'payme-transaction-1',
         providerStatus: 'PerformTransaction',
+      }),
+    );
+  });
+
+  it('does not fabricate a Payme transaction id before one exists', () => {
+    const payload = {
+      jsonrpc: '2.0' as const,
+      id: 99,
+      method: 'CheckPerformTransaction' as const,
+      params: {
+        time: 1710000000000,
+        amount: 250000,
+        account: {
+          order_id: 'order-precheck-1',
+        },
+      },
+    };
+    const authorization = `Basic ${Buffer.from('merchant-login:payme-secret').toString('base64')}`;
+
+    const parsed = service.parsePaymeWebhook(payload, authorization);
+
+    expect(parsed).toEqual(
+      expect.objectContaining({
+        transactionId: 'order-precheck-1',
+        orderId: 'order-precheck-1',
+        amount: 2500,
+        status: 'pending',
+        providerPaymentId: undefined,
+        providerStatus: 'CheckPerformTransaction',
+      }),
+    );
+    expect(parsed.metadata).toEqual(
+      expect.objectContaining({
+        jsonRpcId: 99,
       }),
     );
   });
