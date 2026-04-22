@@ -1,9 +1,11 @@
 import * as crypto from 'crypto';
 import { PaymentConfigService } from '../../config/payment-config.service';
+import { PaymentValidationError } from '../../errors/PaymentSdkError';
 import type { PaymentDriver } from '../../payments/interfaces/payment-driver.interface';
 import { buildPaymentResult } from '../../payments/utils/normalizers.util';
 import { deleteJson, getJson, postJson } from '../../payments/utils/http-client.util';
 import type { ClickGenerateInvoiceParams } from '../../payments/types/payment.types';
+import type { PaymentRequestOptions } from '../../transport/payment-transport';
 import { generateClickMerchantAuthHeader } from '../../payments/utils/signer.util';
 import { ClickError } from '../../errors/ClickError';
 import { generateClickInvoiceUrl } from '../../payments/utils/invoice.util';
@@ -116,6 +118,7 @@ export class ClickClient
 
   async createInvoice(
     data: ClickCreateInvoiceRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickCreateInvoiceResponse> {
     const { orderId, amount, phoneNumber } = data;
     const timestampSec = Math.floor(Date.now() / 1000);
@@ -128,10 +131,13 @@ export class ClickClient
     };
 
     const response = await postJson<ClickCreateInvoiceResponse>(
+      this.configService.transport,
       `${this.config.apiUrl}/invoice/create`,
       payload,
       this.buildMerchantHeaders(timestampSec),
       'Click invoice creation',
+      this.configService.resolveRequestOptions(requestOptions),
+      'click',
     );
 
     this.ensureClickSuccess(response);
@@ -140,9 +146,10 @@ export class ClickClient
 
   async createPayment(
     data: ClickCreateInvoiceRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickPaymentResult> {
     const { orderId, amount } = data;
-    const response = await this.createInvoice(data);
+    const response = await this.createInvoice(data, requestOptions);
     const providerInvoiceId = String(response.invoice_id || orderId);
 
     return buildPaymentResult({
@@ -161,16 +168,25 @@ export class ClickClient
 
   async checkInvoice(
     data: { invoiceId?: string; transactionId?: string },
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickInvoiceStatusResponse> {
     const timestampSec = Math.floor(Date.now() / 1000);
     const invoiceId = data.invoiceId || data.transactionId;
     if (!invoiceId) {
-      throw new Error('Click invoice check requires invoiceId or transactionId');
+      throw new PaymentValidationError(
+        'Click invoice check requires invoiceId or transactionId',
+        {
+          provider: 'click',
+        },
+      );
     }
     const response = await getJson<ClickInvoiceStatusResponse>(
+      this.configService.transport,
       `${this.config.apiUrl}/invoice/status/${this.config.serviceId}/${invoiceId}`,
       this.buildMerchantHeaders(timestampSec),
       'Click invoice check',
+      this.configService.resolveRequestOptions(requestOptions),
+      'click',
     );
 
     this.ensureClickSuccess(response);
@@ -179,12 +195,16 @@ export class ClickClient
 
   async checkPaymentStatus(
     data: { paymentId: string },
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickPaymentStatusResponse> {
     const timestampSec = Math.floor(Date.now() / 1000);
     const response = await getJson<ClickPaymentStatusResponse>(
+      this.configService.transport,
       `${this.config.apiUrl}/payment/status/${this.config.serviceId}/${data.paymentId}`,
       this.buildMerchantHeaders(timestampSec),
       'Click payment check',
+      this.configService.resolveRequestOptions(requestOptions),
+      'click',
     );
 
     this.ensureClickSuccess(response);
@@ -193,19 +213,26 @@ export class ClickClient
 
   async checkPaymentStatusByMerchantTransId(
     data: { orderId: string; paymentDate: string },
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickPaymentStatusResponse> {
     const timestampSec = Math.floor(Date.now() / 1000);
     const response = await getJson<ClickPaymentStatusResponse>(
+      this.configService.transport,
       `${this.config.apiUrl}/payment/status_by_mti/${this.config.serviceId}/${data.orderId}/${data.paymentDate}`,
       this.buildMerchantHeaders(timestampSec),
       'Click payment check by merchant transaction id',
+      this.configService.resolveRequestOptions(requestOptions),
+      'click',
     );
 
     this.ensureClickSuccess(response);
     return response;
   }
 
-  async checkPayment(data: ClickCheckRequest): Promise<ClickPaymentResult> {
+  async checkPayment(
+    data: ClickCheckRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ): Promise<ClickPaymentResult> {
     const paymentId = 'paymentId' in data ? data.paymentId : undefined;
     const invoiceId =
       'invoiceId' in data || 'transactionId' in data
@@ -214,7 +241,10 @@ export class ClickClient
         : undefined;
 
     if (paymentId) {
-      const response = await this.checkPaymentStatus({ paymentId: String(paymentId) });
+      const response = await this.checkPaymentStatus(
+        { paymentId: String(paymentId) },
+        requestOptions,
+      );
       const providerPaymentId = String(response.payment_id || paymentId);
       return buildPaymentResult({
         provider: 'click',
@@ -235,7 +265,10 @@ export class ClickClient
     }
 
     if (invoiceId) {
-      const response = await this.checkInvoice({ invoiceId: String(invoiceId) });
+      const response = await this.checkInvoice(
+        { invoiceId: String(invoiceId) },
+        requestOptions,
+      );
       const providerInvoiceId = String(invoiceId);
       return buildPaymentResult({
         provider: 'click',
@@ -260,7 +293,7 @@ export class ClickClient
       const response = await this.checkPaymentStatusByMerchantTransId({
         orderId: String(data.orderId),
         paymentDate: String(data.paymentDate),
-      });
+      }, requestOptions);
       const providerPaymentId = String(response.payment_id || data.orderId);
       return buildPaymentResult({
         provider: 'click',
@@ -283,19 +316,26 @@ export class ClickClient
       });
     }
 
-    throw new Error(
+    throw new PaymentValidationError(
       'Click payment check requires one of: paymentId, invoiceId/transactionId, or orderId+paymentDate',
+      {
+        provider: 'click',
+      },
     );
   }
 
   async cancelPayment(
     data: ClickCancelPaymentRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickPaymentResult> {
     const timestampSec = Math.floor(Date.now() / 1000);
     const response = await deleteJson<ClickPaymentReversalResponse>(
+      this.configService.transport,
       `${this.config.apiUrl}/payment/reversal/${this.config.serviceId}/${data.paymentId}`,
       this.buildMerchantHeaders(timestampSec),
       'Click payment reversal',
+      this.configService.resolveRequestOptions(requestOptions),
+      'click',
     );
 
     this.ensureClickSuccess(response);
@@ -314,9 +354,11 @@ export class ClickClient
 
   async submitFiscalItems(
     data: ClickSubmitFiscalItemsRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickCreateInvoiceResponse> {
     const timestampSec = Math.floor(Date.now() / 1000);
     const response = await postJson<ClickCreateInvoiceResponse>(
+      this.configService.transport,
       `${this.config.apiUrl}/payment/ofd_data/submit_items`,
       {
         service_id: Number(this.config.serviceId),
@@ -339,6 +381,8 @@ export class ClickClient
       },
       this.buildMerchantHeaders(timestampSec),
       'Click fiscal data submit items',
+      this.configService.resolveRequestOptions(requestOptions),
+      'click',
     );
 
     this.ensureClickSuccess(response);
@@ -347,9 +391,11 @@ export class ClickClient
 
   async submitFiscalQrCode(
     data: ClickSubmitFiscalQrCodeRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickCreateInvoiceResponse> {
     const timestampSec = Math.floor(Date.now() / 1000);
     const response = await postJson<ClickCreateInvoiceResponse>(
+      this.configService.transport,
       `${this.config.apiUrl}/payment/ofd_data/submit_qrcode`,
       {
         service_id: Number(this.config.serviceId),
@@ -358,18 +404,26 @@ export class ClickClient
       },
       this.buildMerchantHeaders(timestampSec),
       'Click fiscal qrcode submit',
+      this.configService.resolveRequestOptions(requestOptions),
+      'click',
     );
 
     this.ensureClickSuccess(response);
     return response;
   }
 
-  async getFiscalData(paymentId: string): Promise<ClickFiscalDataResponse> {
+  async getFiscalData(
+    paymentId: string,
+    requestOptions: PaymentRequestOptions = {},
+  ): Promise<ClickFiscalDataResponse> {
     const timestampSec = Math.floor(Date.now() / 1000);
     return getJson<ClickFiscalDataResponse>(
+      this.configService.transport,
       `${this.config.apiUrl}/payment/ofd_data/${this.config.serviceId}/${paymentId}`,
       this.buildMerchantHeaders(timestampSec),
       'Click fiscal data fetch',
+      this.configService.resolveRequestOptions(requestOptions),
+      'click',
     );
   }
 

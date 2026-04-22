@@ -1,9 +1,14 @@
 import * as crypto from 'crypto';
 import { PaymentConfigService } from '../../config/payment-config.service';
+import {
+  PaymentSdkError,
+  PaymentValidationError,
+} from '../../errors/PaymentSdkError';
 import type { PaymentDriver } from '../../payments/interfaces/payment-driver.interface';
 import { postJson } from '../../payments/utils/http-client.util';
 import { buildPaymentResult, firstDefined } from '../../payments/utils/normalizers.util';
 import { fromProviderAmount, toProviderAmount } from '../../payments/utils/amount.util';
+import type { PaymentRequestOptions } from '../../transport/payment-transport';
 import type {
   UzumApiResponse,
   UzumCancelPaymentRequest,
@@ -63,8 +68,15 @@ export class UzumClient
       return response.result;
     }
 
-    throw new Error(
+    throw new PaymentSdkError(
       `${context} error ${response?.errorCode ?? 'unknown'}: ${response?.message || 'Unknown Uzum API error'}`,
+      {
+        code: response?.errorCode ?? 'uzum_error',
+        provider: 'uzum',
+        category: 'provider',
+        retryable: false,
+        details: response,
+      },
     );
   }
 
@@ -100,19 +112,24 @@ export class UzumClient
 
   async registerPayment(
     data: UzumRegisterPaymentRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumApiResponse<UzumRegisterPaymentResult>> {
     return postJson<UzumApiResponse<UzumRegisterPaymentResult>>(
+      this.configService.transport,
       `${this.config.apiUrl}/api/v1/payment/register`,
       this.buildRegisterPayload(data),
       this.buildHeaders(),
       'Uzum payment registration',
+      this.configService.resolveRequestOptions(requestOptions),
+      'uzum',
     );
   }
 
   async createPayment(
     data: UzumRegisterPaymentRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumPaymentResult> {
-    const response = await this.registerPayment(data);
+    const response = await this.registerPayment(data, requestOptions);
     const result = this.ensureSuccess(response, 'Uzum payment registration');
 
     return buildPaymentResult({
@@ -139,32 +156,48 @@ export class UzumClient
 
   async getOrderStatus(
     data: UzumGetOrderStatusRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumApiResponse<UzumOrderStatusResult>> {
     const orderId = data.orderId || data.transactionId;
     if (!orderId) {
-      throw new Error('Uzum getOrderStatus requires orderId or transactionId');
+      throw new PaymentValidationError(
+        'Uzum getOrderStatus requires orderId or transactionId',
+        {
+          provider: 'uzum',
+        },
+      );
     }
 
     return postJson<UzumApiResponse<UzumOrderStatusResult>>(
+      this.configService.transport,
       `${this.config.apiUrl}/api/v1/payment/getOrderStatus`,
       { orderId },
       this.buildHeaders(),
       'Uzum order status check',
+      this.configService.resolveRequestOptions(requestOptions),
+      'uzum',
     );
   }
 
   async getOperationState(
     data: UzumGetOperationStateRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumApiResponse<UzumOperationStateResult>> {
     return postJson<UzumApiResponse<UzumOperationStateResult>>(
+      this.configService.transport,
       `${this.config.apiUrl}/api/v1/payment/getOperationState`,
       { operationId: data.operationId },
       this.buildHeaders(),
       'Uzum operation state check',
+      this.configService.resolveRequestOptions(requestOptions),
+      'uzum',
     );
   }
 
-  async checkPayment(data: UzumCheckPaymentRequest): Promise<UzumPaymentResult> {
+  async checkPayment(
+    data: UzumCheckPaymentRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ): Promise<UzumPaymentResult> {
     const orderId =
       'orderId' in data && data.orderId
         ? data.orderId
@@ -175,7 +208,7 @@ export class UzumClient
     if (orderId) {
       const orderStatusResponse = await this.getOrderStatus({
         orderId: String(orderId),
-      });
+      }, requestOptions);
       const orderResult = this.ensureSuccess(
         orderStatusResponse,
         'Uzum order status check',
@@ -215,7 +248,7 @@ export class UzumClient
         operationId: String(data.operationId),
         amount: data.amount,
         orderId: data.orderId,
-      });
+      }, requestOptions);
       const operationResult = this.ensureSuccess(
         operationStateResponse,
         'Uzum operation state check',
@@ -246,13 +279,20 @@ export class UzumClient
       });
     }
 
-    throw new Error('Uzum payment check requires orderId/transactionId or operationId');
+    throw new PaymentValidationError(
+      'Uzum payment check requires orderId/transactionId or operationId',
+      {
+        provider: 'uzum',
+      },
+    );
   }
 
   async merchantPay(
     data: UzumMerchantPayRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumApiResponse<UzumMerchantPayResult>> {
     return postJson<UzumApiResponse<UzumMerchantPayResult>>(
+      this.configService.transport,
       `${this.config.apiUrl}/api/v1/payment/merchantPay`,
       {
         processData: data.processData,
@@ -261,26 +301,34 @@ export class UzumClient
       },
       this.buildOperationHeaders(data.operationId),
       'Uzum merchant pay',
+      this.configService.resolveRequestOptions(requestOptions),
+      'uzum',
     );
   }
 
   async getReceipts(
     data: UzumGetReceiptsRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumApiResponse<UzumGetReceiptsResult>> {
     return postJson<UzumApiResponse<UzumGetReceiptsResult>>(
+      this.configService.transport,
       `${this.config.apiUrl}/api/v1/payment/getReceipts`,
       {
         orderId: data.orderId,
       },
       this.buildHeaders(),
       'Uzum receipts fetch',
+      this.configService.resolveRequestOptions(requestOptions),
+      'uzum',
     );
   }
 
   async completePayment(
     data: UzumOperationCommand,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumPaymentResult> {
     const response = await postJson<UzumApiResponse<UzumOperationResult>>(
+      this.configService.transport,
       `${this.config.apiUrl}/api/v1/acquiring/complete`,
       {
         orderId: data.orderId,
@@ -288,6 +336,8 @@ export class UzumClient
       },
       this.buildOperationHeaders(data.operationId),
       'Uzum complete request',
+      this.configService.resolveRequestOptions(requestOptions),
+      'uzum',
     );
     const result = this.ensureSuccess(response, 'Uzum complete request');
 
@@ -309,8 +359,10 @@ export class UzumClient
 
   async refundPayment(
     data: UzumOperationCommand,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumPaymentResult> {
     const response = await postJson<UzumApiResponse<UzumOperationResult>>(
+      this.configService.transport,
       `${this.config.apiUrl}/api/v1/acquiring/refund`,
       {
         orderId: data.orderId,
@@ -318,6 +370,8 @@ export class UzumClient
       },
       this.buildOperationHeaders(data.operationId),
       'Uzum refund request',
+      this.configService.resolveRequestOptions(requestOptions),
+      'uzum',
     );
     const result = this.ensureSuccess(response, 'Uzum refund request');
 
@@ -339,8 +393,10 @@ export class UzumClient
 
   async reversePayment(
     data: UzumOperationCommand,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumPaymentResult> {
     const response = await postJson<UzumApiResponse<UzumOperationResult>>(
+      this.configService.transport,
       `${this.config.apiUrl}/api/v1/acquiring/reverse`,
       {
         orderId: data.orderId,
@@ -348,6 +404,8 @@ export class UzumClient
       },
       this.buildOperationHeaders(data.operationId),
       'Uzum reverse request',
+      this.configService.resolveRequestOptions(requestOptions),
+      'uzum',
     );
     const result = this.ensureSuccess(response, 'Uzum reverse request');
 
@@ -369,18 +427,21 @@ export class UzumClient
 
   async cancelPayment(
     data: UzumCancelPaymentRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumPaymentResult> {
     return this.reversePayment({
       orderId: data.orderId || data.transactionId!,
       amount: data.amount,
       operationId: data.operationId,
-    });
+    }, requestOptions);
   }
 
   async purchaseReceipt(
     data: UzumPurchaseReceiptRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumApiResponse<UzumPurchaseReceiptResult>> {
     return postJson<UzumApiResponse<UzumPurchaseReceiptResult>>(
+      this.configService.transport,
       `${this.config.apiUrl}/api/v1/acquiring/purchaseReceipt`,
       {
         orderId: data.orderId,
@@ -388,6 +449,8 @@ export class UzumClient
       },
       this.buildOperationHeaders(data.operationId),
       'Uzum purchase receipt request',
+      this.configService.resolveRequestOptions(requestOptions),
+      'uzum',
     );
   }
 }

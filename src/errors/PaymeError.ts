@@ -16,7 +16,13 @@ export class PaymeError extends BasePaymentError {
   data?: unknown;
 
   constructor(message: string, code: number | string, data?: unknown) {
-    super(message, code);
+    super(message, {
+      code,
+      provider: 'payme',
+      category: 'provider',
+      retryable: false,
+      details: data,
+    });
     this.name = 'PaymeError';
     this.data = data;
   }

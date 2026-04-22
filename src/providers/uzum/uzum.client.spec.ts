@@ -10,15 +10,19 @@ describe('UzumClient', () => {
     jest.clearAllMocks();
     requestSpy = jest.spyOn(axios, 'request');
 
-    driver = new UzumClient({
-      uzumConfig: {
-        terminalId: 'terminal-1',
-        apiKey: 'api-key-1',
-        merchantAccessToken: undefined,
-        contentLanguage: 'ru',
-        apiUrl: 'https://developer.uzumbank.uz',
-      },
-    } as PaymentConfigService);
+    driver = new UzumClient(
+      new PaymentConfigService({
+        providers: {
+          uzum: {
+            terminalId: 'terminal-1',
+            apiKey: 'api-key-1',
+            merchantAccessToken: undefined,
+            contentLanguage: 'ru',
+            apiUrl: 'https://developer.uzumbank.uz',
+          },
+        },
+      }),
+    );
   });
 
   afterEach(() => {

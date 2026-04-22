@@ -12,15 +12,19 @@ describe('ClickClient', () => {
     jest.clearAllMocks();
     requestSpy = jest.spyOn(axios, 'request');
 
-    driver = new ClickClient({
-      clickConfig: {
-        serviceId: '101202',
-        merchantId: 'merchant-1',
-        merchantUserId: 'merchant-user-1',
-        secretKey: 'click-secret',
-        apiUrl: 'https://api.click.uz/v2/merchant',
-      },
-    } as PaymentConfigService);
+    driver = new ClickClient(
+      new PaymentConfigService({
+        providers: {
+          click: {
+            serviceId: '101202',
+            merchantId: 'merchant-1',
+            merchantUserId: 'merchant-user-1',
+            secretKey: 'click-secret',
+            apiUrl: 'https://api.click.uz/v2/merchant',
+          },
+        },
+      }),
+    );
   });
 
   afterEach(() => {

@@ -5,6 +5,7 @@ import { postJson } from '../../payments/utils/http-client.util';
 import type {
   GenerateInvoiceParams,
 } from '../../payments/types/payment.types';
+import type { PaymentRequestOptions } from '../../transport/payment-transport';
 import {
   generateBasicAuthHeader,
   generatePaymeXAuthHeader,
@@ -54,9 +55,11 @@ export class PaymeClient
   private async call<TResult>(
     method: string,
     params: Record<string, unknown>,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymeJsonRpcSuccess<TResult>> {
     const config = this.configService.paymeConfig;
     const response = await postJson<PaymeJsonRpcResponse<TResult>>(
+      this.configService.transport,
       config.apiUrl,
       {
         id: Date.now(),
@@ -68,6 +71,8 @@ export class PaymeClient
         'X-Auth': generatePaymeXAuthHeader(config.merchantId, config.key),
       },
       `Payme ${method}`,
+      this.configService.resolveRequestOptions(requestOptions),
+      'payme',
     );
 
     this.ensurePaymeSuccess(response);
@@ -76,6 +81,7 @@ export class PaymeClient
 
   async createReceipt(
     data: PaymeCreateReceiptRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymeJsonRpcSuccess<PaymeReceiptEnvelope>> {
     const { orderId, amount, detail, description } = data;
     return this.call<PaymeReceiptEnvelope>('receipts.create', {
@@ -85,14 +91,15 @@ export class PaymeClient
       },
       ...(detail ? { detail } : {}),
       ...(description ? { description } : {}),
-    });
+    }, requestOptions);
   }
 
   async createPayment(
     data: PaymeCreateReceiptRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymePaymentResult> {
     const { orderId, amount } = data;
-    const response = await this.createReceipt(data);
+    const response = await this.createReceipt(data, requestOptions);
     const receipt = response.result.receipt;
     const providerPaymentId =
       firstDefined(receipt?._id, receipt?.id, orderId) || orderId;
@@ -119,17 +126,19 @@ export class PaymeClient
 
   async checkReceipt(
     data: PaymeReceiptLookupRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymeJsonRpcSuccess<{ state?: number; receipt?: PaymeReceipt }>> {
     return this.call<{ state?: number; receipt?: PaymeReceipt }>('receipts.check', {
       id: data.transactionId,
-    });
+    }, requestOptions);
   }
 
   async checkPayment(
     data: PaymeReceiptLookupRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymePaymentResult> {
     const { transactionId } = data;
-    const response = await this.checkReceipt(data);
+    const response = await this.checkReceipt(data, requestOptions);
     const receipt = response?.result?.receipt;
     return buildPaymentResult({
       provider: 'payme',
@@ -150,18 +159,20 @@ export class PaymeClient
 
   async getReceipt(
     data: PaymeReceiptLookupRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymeJsonRpcSuccess<PaymeReceiptEnvelope>> {
     return this.call<PaymeReceiptEnvelope>('receipts.get', {
       id: data.transactionId,
-    });
+    }, requestOptions);
   }
 
   async cancelReceipt(
     data: PaymeReceiptLookupRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymePaymentResult> {
     const response = await this.call<PaymeReceiptEnvelope>('receipts.cancel', {
       id: data.transactionId,
-    });
+    }, requestOptions);
     const receipt = response.result.receipt;
     const providerPaymentId =
       firstDefined(receipt?._id, receipt?.id, data.transactionId) || data.transactionId;
@@ -184,22 +195,24 @@ export class PaymeClient
 
   async sendReceipt(
     data: PaymeSendReceiptRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymeJsonRpcSuccess<PaymeSendReceiptResult>> {
     return this.call<PaymeSendReceiptResult>('receipts.send', {
       id: data.transactionId,
       phone: data.phone,
-    });
+    }, requestOptions);
   }
 
   async payReceipt(
     data: PaymePayReceiptRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymePaymentResult> {
     const response = await this.call<PaymeReceiptEnvelope>('receipts.pay', {
       id: data.transactionId,
       token: data.token,
       ...(data.payer ? { payer: data.payer } : {}),
       ...(data.hold !== undefined ? { hold: data.hold } : {}),
-    });
+    }, requestOptions);
     const receipt = response.result.receipt;
     const providerPaymentId =
       firstDefined(receipt?._id, receipt?.id, data.transactionId) || data.transactionId;
@@ -222,15 +235,17 @@ export class PaymeClient
 
   async setReceiptFiscalData(
     data: PaymeSetReceiptFiscalDataRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymeJsonRpcSuccess<PaymeReceiptEnvelope>> {
     return this.call<PaymeReceiptEnvelope>('receipts.set_fiscal_data', {
       id: data.transactionId,
       fiscal_data: data.fiscalData,
-    });
+    }, requestOptions);
   }
 
   async createCard(
     data: PaymeCreateCardRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymeJsonRpcSuccess<PaymeCardTokenResult>> {
     return this.call<PaymeCardTokenResult>('cards.create', {
       card: {
@@ -238,41 +253,46 @@ export class PaymeClient
         expire: data.expire,
       },
       ...(data.save !== undefined ? { save: data.save } : {}),
-    });
+    }, requestOptions);
   }
 
   async getCardVerifyCode(
     data: PaymeGetCardVerifyCodeRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymeJsonRpcSuccess<{ sent?: boolean }>> {
     return this.call<{ sent?: boolean }>('cards.get_verify_code', {
       token: data.token,
-    });
+    }, requestOptions);
   }
 
   async verifyCard(
     data: PaymeVerifyCardRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymeJsonRpcSuccess<PaymeCardTokenResult>> {
     return this.call<PaymeCardTokenResult>('cards.verify', {
       token: data.token,
       code: data.code,
-    });
+    }, requestOptions);
   }
 
   async checkCard(
     data: PaymeCheckCardRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymeJsonRpcSuccess<{ card?: PaymeCardTokenResult['card']; verify?: boolean }>> {
     return this.call<{ card?: PaymeCardTokenResult['card']; verify?: boolean }>(
       'cards.check',
       {
         token: data.token,
       },
+      requestOptions,
     );
   }
 
   async cancelPayment(
     data: PaymeReceiptLookupRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymePaymentResult> {
-    return this.cancelReceipt(data);
+    return this.cancelReceipt(data, requestOptions);
   }
 
   validateAuthorizationHeader(authorization?: string): boolean {

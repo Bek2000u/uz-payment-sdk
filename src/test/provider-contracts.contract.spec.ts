@@ -21,13 +21,17 @@ describe('Provider contract fixtures', () => {
       data: loadFixture('payme/receipts-check-success.json'),
     } as any);
 
-    const client = new PaymeClient({
-      paymeConfig: {
-        merchantId: 'cashbox-1',
-        key: 'secret-key',
-        apiUrl: 'https://checkout.test.paycom.uz/api',
-      },
-    } as PaymentConfigService);
+    const client = new PaymeClient(
+      new PaymentConfigService({
+        providers: {
+          payme: {
+            merchantId: 'cashbox-1',
+            key: 'secret-key',
+            apiUrl: 'https://checkout.test.paycom.uz/api',
+          },
+        },
+      }),
+    );
 
     const result = await client.checkPayment({ transactionId: 'receipt-1' });
 
@@ -50,15 +54,19 @@ describe('Provider contract fixtures', () => {
         data: loadFixture('click/payment-status-success.json'),
       } as any);
 
-    const client = new ClickClient({
-      clickConfig: {
-        serviceId: '101202',
-        merchantId: 'merchant-1',
-        merchantUserId: 'merchant-user-1',
-        secretKey: 'click-secret',
-        apiUrl: 'https://api.click.uz/v2/merchant',
-      },
-    } as PaymentConfigService);
+    const client = new ClickClient(
+      new PaymentConfigService({
+        providers: {
+          click: {
+            serviceId: '101202',
+            merchantId: 'merchant-1',
+            merchantUserId: 'merchant-user-1',
+            secretKey: 'click-secret',
+            apiUrl: 'https://api.click.uz/v2/merchant',
+          },
+        },
+      }),
+    );
 
     const invoice = await client.checkPayment({ transactionId: '445566' });
     const payment = await client.checkPayment({
@@ -84,14 +92,18 @@ describe('Provider contract fixtures', () => {
         data: loadFixture('uzum/operation-state-success.json'),
       } as any);
 
-    const client = new UzumClient({
-      uzumConfig: {
-        terminalId: 'terminal-1',
-        apiKey: 'api-key-1',
-        contentLanguage: 'ru',
-        apiUrl: 'https://developer.uzumbank.uz',
-      },
-    } as PaymentConfigService);
+    const client = new UzumClient(
+      new PaymentConfigService({
+        providers: {
+          uzum: {
+            terminalId: 'terminal-1',
+            apiKey: 'api-key-1',
+            contentLanguage: 'ru',
+            apiUrl: 'https://developer.uzumbank.uz',
+          },
+        },
+      }),
+    );
 
     const order = await client.checkPayment({ transactionId: 'order-1' });
     const operation = await client.checkPayment({ operationId: 'operation-2' });

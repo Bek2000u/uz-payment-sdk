@@ -39,6 +39,10 @@ export interface PaymentResult<
   TProvider extends PaymentProviderId = PaymentProviderId,
 > {
   success: boolean;
+  isTerminal: boolean;
+  isSettled: boolean;
+  isFinalSuccess: boolean;
+  requiresAction: boolean;
   provider: TProvider;
   transactionId: string;
   status: NormalizedPaymentStatus;

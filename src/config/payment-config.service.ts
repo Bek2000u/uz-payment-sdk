@@ -1,6 +1,12 @@
 import { CacheStore, MemoryCacheStore } from '../cache/cache-store';
+import { PaymentConfigurationError } from '../errors/PaymentSdkError';
 import { SdkLogger, noopLogger } from '../logger/sdk-logger';
 import { PaymentProviderId } from '../payments/types/payment.types';
+import {
+  PaymentRequestOptions,
+  PaymentTransport,
+} from '../transport/payment-transport';
+import { createAxiosTransport } from '../payments/utils/http-client.util';
 
 type ProviderCredentialMap = Record<PaymentProviderId, string[][]>;
 type EnvSource = Record<string, string | undefined>;
@@ -45,6 +51,8 @@ export interface PaymentSdkConfig {
   cacheStore?: CacheStore;
   webhookEventHistoryLimit?: number;
   allowInMemoryWebhookIdempotency?: boolean;
+  transport?: PaymentTransport;
+  requestDefaults?: PaymentRequestOptions;
 }
 
 export class PaymentConfigService {
@@ -52,12 +60,31 @@ export class PaymentConfigService {
   private readonly config: PaymentSdkConfig;
   readonly logger: SdkLogger;
   readonly cacheStore: CacheStore;
+  readonly transport: PaymentTransport;
 
   constructor(config: PaymentSdkConfig = {}) {
     this.config = config;
     this.env = config.env || (process.env as EnvSource);
     this.logger = config.logger || noopLogger;
     this.cacheStore = config.cacheStore || new MemoryCacheStore();
+    this.transport = config.transport || createAxiosTransport();
+  }
+
+  resolveRequestOptions(
+    overrides: PaymentRequestOptions = {},
+  ): PaymentRequestOptions {
+    const defaultTimeoutMs = Number(
+      this.env.PAYMENT_HTTP_TIMEOUT_MS || process.env.PAYMENT_HTTP_TIMEOUT_MS || 15000,
+    );
+
+    return {
+      timeoutMs:
+        overrides.timeoutMs ??
+        this.config.requestDefaults?.timeoutMs ??
+        defaultTimeoutMs,
+      signal: overrides.signal ?? this.config.requestDefaults?.signal,
+      retry: overrides.retry ?? this.config.requestDefaults?.retry,
+    };
   }
 
   private readonly providerCredentialMap: ProviderCredentialMap = {
@@ -245,8 +272,11 @@ export class PaymentConfigService {
   assertProviderCredentials(provider: PaymentProviderId): void {
     const missing = this.getMissingProviderCredentials(provider);
     if (missing.length > 0) {
-      throw new Error(
+      throw new PaymentConfigurationError(
         `Missing required ${provider} credentials: ${missing.join(', ')}`,
+        {
+          provider,
+        },
       );
     }
   }

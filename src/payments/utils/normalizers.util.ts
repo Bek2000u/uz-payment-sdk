@@ -91,6 +91,30 @@ const isSuccessfulResultStatus = (
   return !['failed', 'cancelled', 'unknown'].includes(status);
 };
 
+const isTerminalResultStatus = (
+  status: NormalizedPaymentStatus,
+): boolean => {
+  return ['success', 'failed', 'cancelled', 'refunded'].includes(status);
+};
+
+const isSettledResultStatus = (
+  status: NormalizedPaymentStatus,
+): boolean => {
+  return status === 'success';
+};
+
+const isFinalSuccessStatus = (
+  status: NormalizedPaymentStatus,
+): boolean => {
+  return status === 'success';
+};
+
+const requiresActionStatus = (
+  status: NormalizedPaymentStatus,
+): boolean => {
+  return status === 'pending';
+};
+
 export function buildPaymentResult<
   TProvider extends PaymentProviderId,
   TRaw = unknown,
@@ -131,6 +155,10 @@ export function buildPaymentResult<
 
   return {
     success: isSuccessfulResultStatus(normalizedStatus),
+    isTerminal: isTerminalResultStatus(normalizedStatus),
+    isSettled: isSettledResultStatus(normalizedStatus),
+    isFinalSuccess: isFinalSuccessStatus(normalizedStatus),
+    requiresAction: requiresActionStatus(normalizedStatus),
     provider,
     transactionId,
     status: normalizedStatus,

@@ -49,6 +49,10 @@ describe('PaymentsService', () => {
   it('supports object-style create request', async () => {
     const mockResponse: PaymePaymentResult = {
       success: true,
+      isTerminal: false,
+      isSettled: false,
+      isFinalSuccess: false,
+      requiresAction: true,
       provider: 'payme',
       transactionId: 'txn_1',
       status: 'pending',
@@ -140,6 +144,10 @@ describe('PaymentsService', () => {
   it('routes explicit click facade methods to generic provider flow', async () => {
     const mockResponse: ClickPaymentResult = {
       success: true,
+      isTerminal: true,
+      isSettled: false,
+      isFinalSuccess: false,
+      requiresAction: false,
       provider: 'click',
       transactionId: 'click-payment-1',
       status: 'success',
@@ -153,15 +161,22 @@ describe('PaymentsService', () => {
       paymentId: 'click-payment-1',
     });
 
-    expect(service.clickClient.cancelPayment).toHaveBeenCalledWith({
-      paymentId: 'click-payment-1',
-    });
+    expect(service.clickClient.cancelPayment).toHaveBeenCalledWith(
+      {
+        paymentId: 'click-payment-1',
+      },
+      {},
+    );
     expect(result).toEqual(mockResponse);
   });
 
   it('routes explicit uzum refund facade to driver method', async () => {
     const mockResponse: UzumPaymentResult = {
       success: true,
+      isTerminal: true,
+      isSettled: false,
+      isFinalSuccess: false,
+      requiresAction: false,
       provider: 'uzum',
       transactionId: 'operation-1',
       status: 'refunded',
@@ -176,10 +191,13 @@ describe('PaymentsService', () => {
       amount: 1000,
     });
 
-    expect(service.uzumClient.refundPayment).toHaveBeenCalledWith({
-      orderId: 'order-1',
-      amount: 1000,
-    });
+    expect(service.uzumClient.refundPayment).toHaveBeenCalledWith(
+      {
+        orderId: 'order-1',
+        amount: 1000,
+      },
+      {},
+    );
     expect(result).toEqual(mockResponse);
   });
 });

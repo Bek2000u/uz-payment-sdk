@@ -1,4 +1,5 @@
 import type { PaymentResult } from '../types/payment.types';
+import type { PaymentRequestOptions } from '../../transport/payment-transport';
 
 export interface PaymentDriver<
   TCreateData,
@@ -7,8 +8,8 @@ export interface PaymentDriver<
   TInvoiceData = never,
   TResult extends PaymentResult = PaymentResult,
 > {
-  createPayment(data: TCreateData): Promise<TResult>;
-  checkPayment(data: TCheckData): Promise<TResult>;
-  cancelPayment?(data: TCancelData): Promise<TResult>;
+  createPayment(data: TCreateData, requestOptions?: PaymentRequestOptions): Promise<TResult>;
+  checkPayment(data: TCheckData, requestOptions?: PaymentRequestOptions): Promise<TResult>;
+  cancelPayment?(data: TCancelData, requestOptions?: PaymentRequestOptions): Promise<TResult>;
   generateInvoiceUrl?(data: TInvoiceData): string;
 }

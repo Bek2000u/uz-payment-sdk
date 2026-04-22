@@ -24,6 +24,16 @@ export { BasePaymentError } from './errors/BasePaymentError';
 export { ClickError } from './errors/ClickError';
 export { PaymeError } from './errors/PaymeError';
 export {
+  PaymentSdkError,
+  PaymentValidationError,
+  PaymentConfigurationError,
+  PaymentTransportError,
+} from './errors/PaymentSdkError';
+export {
+  createAxiosTransport,
+  createFetchTransport,
+} from './payments/utils/http-client.util';
+export {
   createUzumMerchantAuthorizationHeader,
   createUzumMerchantCheckErrorResponse,
   createUzumMerchantCheckResponse,
@@ -46,6 +56,10 @@ export type {
   PaymentConfig,
   PaymentSdkConfig,
 } from './config/payment-config.service';
+export type {
+  BasePaymentErrorOptions,
+  PaymentErrorCategory,
+} from './errors/BasePaymentError';
 export type { SdkLogger } from './logger/sdk-logger';
 export type { PaymentDriver } from './payments/interfaces/payment-driver.interface';
 export type {
@@ -65,6 +79,7 @@ export type {
   GenerateInvoiceParams,
   MinorUnitAmount,
   PaymentAmount,
+  PaymentResult,
   PaymentMetadata,
   ProviderAmount,
   PaymentProviderId,
@@ -72,6 +87,13 @@ export type {
   PaymentResult as PaymentResponse,
   ProviderInfo,
 } from './payments/types/payment.types';
+export type {
+  PaymentRequestOptions,
+  PaymentRetryPolicy,
+  PaymentTransport,
+  PaymentTransportRequest,
+  PaymentTransportResponse,
+} from './transport/payment-transport';
 export { PAYMENT_PROVIDERS } from './payments/types/payment.types';
 export type {
   ClickCancelPaymentRequest,

@@ -2,6 +2,9 @@ import {
   PaymentConfigService,
   PaymentSdkConfig,
 } from '../config/payment-config.service';
+import {
+  PaymentValidationError,
+} from '../errors/PaymentSdkError';
 import { maskSensitiveData } from '../logger/sdk-logger';
 import { ClickClient } from '../providers/click/click.client';
 import { PaymeClient } from '../providers/payme/payme.client';
@@ -15,6 +18,7 @@ import {
   PaymentResult,
   ProviderInfo,
 } from './types/payment.types';
+import type { PaymentRequestOptions } from '../transport/payment-transport';
 import {
   ClickCancelPaymentRequest,
   ClickCheckInvoiceRequest,
@@ -101,158 +105,210 @@ export class PaymentsService {
 
   async createClickInvoice(
     data: ClickCreateInvoiceRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickPaymentResult> {
     this.configService.assertProviderCredentials('click');
-    return this.clickClient.createPayment(data);
+    return this.clickClient.createPayment(data, requestOptions);
   }
 
   async checkClickInvoice(
     data: ClickCheckInvoiceRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickPaymentResult> {
     this.configService.assertProviderCredentials('click');
-    return this.clickClient.checkPayment(data);
+    return this.clickClient.checkPayment(data, requestOptions);
   }
 
   async checkClickPayment(
     data: ClickCheckPaymentRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickPaymentResult> {
     this.configService.assertProviderCredentials('click');
-    return this.clickClient.checkPayment(data);
+    return this.clickClient.checkPayment(data, requestOptions);
   }
 
   async checkClickPaymentByOrder(
     data: ClickCheckPaymentByMerchantTransIdRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickPaymentResult> {
     this.configService.assertProviderCredentials('click');
-    return this.clickClient.checkPayment(data);
+    return this.clickClient.checkPayment(data, requestOptions);
   }
 
   async cancelClickPayment(
     data: ClickCancelPaymentRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<ClickPaymentResult> {
     this.configService.assertProviderCredentials('click');
-    return this.clickClient.cancelPayment(data);
+    return this.clickClient.cancelPayment(data, requestOptions);
   }
 
-  async submitClickFiscalItems(data: ClickSubmitFiscalItemsRequest) {
+  async submitClickFiscalItems(
+    data: ClickSubmitFiscalItemsRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('click');
-    return this.clickClient.submitFiscalItems(data);
+    return this.clickClient.submitFiscalItems(data, requestOptions);
   }
 
-  async submitClickFiscalQrCode(data: ClickSubmitFiscalQrCodeRequest) {
+  async submitClickFiscalQrCode(
+    data: ClickSubmitFiscalQrCodeRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('click');
-    return this.clickClient.submitFiscalQrCode(data);
+    return this.clickClient.submitFiscalQrCode(data, requestOptions);
   }
 
-  async getClickFiscalData(paymentId: string): Promise<ClickFiscalDataResponse> {
+  async getClickFiscalData(
+    paymentId: string,
+    requestOptions: PaymentRequestOptions = {},
+  ): Promise<ClickFiscalDataResponse> {
     this.configService.assertProviderCredentials('click');
-    return this.clickClient.getFiscalData(paymentId);
+    return this.clickClient.getFiscalData(paymentId, requestOptions);
   }
 
   async createPaymeReceipt(
     data: PaymeCreateReceiptRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymePaymentResult> {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.createPayment(data);
+    return this.paymeClient.createPayment(data, requestOptions);
   }
 
   async checkPaymeReceipt(
     data: PaymeReceiptLookupRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymePaymentResult> {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.checkPayment(data);
+    return this.paymeClient.checkPayment(data, requestOptions);
   }
 
   async cancelPaymeReceipt(
     data: PaymeReceiptLookupRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymePaymentResult> {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.cancelPayment(data);
+    return this.paymeClient.cancelPayment(data, requestOptions);
   }
 
-  async getPaymeReceipt(data: PaymeReceiptLookupRequest) {
+  async getPaymeReceipt(
+    data: PaymeReceiptLookupRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.getReceipt(data);
+    return this.paymeClient.getReceipt(data, requestOptions);
   }
 
-  async sendPaymeReceipt(data: PaymeSendReceiptRequest) {
+  async sendPaymeReceipt(
+    data: PaymeSendReceiptRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.sendReceipt(data);
+    return this.paymeClient.sendReceipt(data, requestOptions);
   }
 
   async payPaymeReceipt(
     data: PaymePayReceiptRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<PaymePaymentResult> {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.payReceipt(data);
+    return this.paymeClient.payReceipt(data, requestOptions);
   }
 
-  async setPaymeReceiptFiscalData(data: PaymeSetReceiptFiscalDataRequest) {
+  async setPaymeReceiptFiscalData(
+    data: PaymeSetReceiptFiscalDataRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.setReceiptFiscalData(data);
+    return this.paymeClient.setReceiptFiscalData(data, requestOptions);
   }
 
-  async createPaymeCard(data: PaymeCreateCardRequest) {
+  async createPaymeCard(
+    data: PaymeCreateCardRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.createCard(data);
+    return this.paymeClient.createCard(data, requestOptions);
   }
 
-  async requestPaymeCardVerifyCode(data: PaymeGetCardVerifyCodeRequest) {
+  async requestPaymeCardVerifyCode(
+    data: PaymeGetCardVerifyCodeRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.getCardVerifyCode(data);
+    return this.paymeClient.getCardVerifyCode(data, requestOptions);
   }
 
-  async verifyPaymeCard(data: PaymeVerifyCardRequest) {
+  async verifyPaymeCard(
+    data: PaymeVerifyCardRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.verifyCard(data);
+    return this.paymeClient.verifyCard(data, requestOptions);
   }
 
-  async checkPaymeCard(data: PaymeCheckCardRequest) {
+  async checkPaymeCard(
+    data: PaymeCheckCardRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeClient.checkCard(data);
+    return this.paymeClient.checkCard(data, requestOptions);
   }
 
   async registerUzumPayment(
     data: UzumRegisterPaymentRequest,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumPaymentResult> {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumClient.createPayment(data);
+    return this.uzumClient.createPayment(data, requestOptions);
   }
 
   async completeUzumPayment(
     data: UzumOperationCommand,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumPaymentResult> {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumClient.completePayment(data);
+    return this.uzumClient.completePayment(data, requestOptions);
   }
 
   async reverseUzumPayment(
     data: UzumOperationCommand,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumPaymentResult> {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumClient.cancelPayment(data);
+    return this.uzumClient.cancelPayment(data, requestOptions);
   }
 
   async refundUzumPayment(
     data: UzumOperationCommand,
+    requestOptions: PaymentRequestOptions = {},
   ): Promise<UzumPaymentResult> {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumClient.refundPayment(data);
+    return this.uzumClient.refundPayment(data, requestOptions);
   }
 
-  async merchantPayUzum(data: UzumMerchantPayRequest) {
+  async merchantPayUzum(
+    data: UzumMerchantPayRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumClient.merchantPay(data);
+    return this.uzumClient.merchantPay(data, requestOptions);
   }
 
-  async getUzumReceipts(data: UzumGetReceiptsRequest) {
+  async getUzumReceipts(
+    data: UzumGetReceiptsRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumClient.getReceipts(data);
+    return this.uzumClient.getReceipts(data, requestOptions);
   }
 
-  async purchaseUzumReceipt(data: UzumPurchaseReceiptRequest) {
+  async purchaseUzumReceipt(
+    data: UzumPurchaseReceiptRequest,
+    requestOptions: PaymentRequestOptions = {},
+  ) {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumClient.purchaseReceipt(data);
+    return this.uzumClient.purchaseReceipt(data, requestOptions);
   }
 
   generateInvoiceUrl(
@@ -415,7 +471,9 @@ export class PaymentsService {
             ? this.uzumClient.checkPayment(data as unknown as UzumCheckPaymentRequest)
             : this.uzumClient.cancelPayment(data as unknown as UzumCancelPaymentRequest);
       default:
-        throw new Error(`Qo'llab-quvvatlanmaydigan provider: ${provider}`);
+        throw new PaymentValidationError(
+          `Qo'llab-quvvatlanmaydigan provider: ${provider}`,
+        );
     }
   }
 
@@ -431,7 +489,9 @@ export class PaymentsService {
           this.toClickGenerateInvoiceParams(data),
         );
       default:
-        throw new Error(`Invoice URL generation is not supported for provider: ${provider}`);
+        throw new PaymentValidationError(
+          `Invoice URL generation is not supported for provider: ${provider}`,
+        );
     }
   }
 
@@ -463,7 +523,9 @@ export class PaymentsService {
     data: Record<string, unknown>,
   ): void {
     if (!PAYMENT_PROVIDERS.includes(provider as PaymentProviderId)) {
-      throw new Error(`Qo'llab-quvvatlanmaydigan provider: ${provider}`);
+      throw new PaymentValidationError(
+        `Qo'llab-quvvatlanmaydigan provider: ${provider}`,
+      );
     }
 
     this.configService.assertProviderCredentials(provider as PaymentProviderId);
@@ -491,7 +553,7 @@ export class PaymentsService {
     );
 
     if (missingFields.length > 0) {
-      throw new Error(
+      throw new PaymentValidationError(
         `Missing required ${provider} ${operation} fields: ${missingFields.join(', ')}`,
       );
     }
@@ -502,7 +564,7 @@ export class PaymentsService {
       const hasMerchantLookup = this.hasValue(data.orderId) && this.hasValue(data.paymentDate);
 
       if (!hasInvoiceLookup && !hasPaymentLookup && !hasMerchantLookup) {
-        throw new Error(
+        throw new PaymentValidationError(
           'Missing required click check fields: paymentId, invoiceId/transactionId, or orderId+paymentDate',
         );
       }
@@ -513,7 +575,7 @@ export class PaymentsService {
       const hasOperationLookup = this.hasValue(data.operationId);
 
       if (!hasOrderLookup && !hasOperationLookup) {
-        throw new Error(
+        throw new PaymentValidationError(
           'Missing required uzum check fields: orderId/transactionId or operationId',
         );
       }
@@ -521,7 +583,7 @@ export class PaymentsService {
 
     if (provider === 'uzum' && operation === 'cancel') {
       if (!(this.hasValue(data.orderId) || this.hasValue(data.transactionId))) {
-        throw new Error(
+        throw new PaymentValidationError(
           'Missing required uzum cancel fields: orderId or transactionId',
         );
       }
@@ -535,7 +597,7 @@ export class PaymentsService {
         (this.hasValue(data.successUrl) && this.hasValue(data.failureUrl))
       )
     ) {
-      throw new Error(
+      throw new PaymentValidationError(
         'Missing required uzum create redirect fields: returnUrl or successUrl+failureUrl',
       );
     }
@@ -546,11 +608,13 @@ export class PaymentsService {
     data: Record<string, unknown>,
   ): void {
     if (!PAYMENT_PROVIDERS.includes(provider as PaymentProviderId)) {
-      throw new Error(`Qo'llab-quvvatlanmaydigan provider: ${provider}`);
+      throw new PaymentValidationError(
+        `Qo'llab-quvvatlanmaydigan provider: ${provider}`,
+      );
     }
 
     if (provider !== 'payme' && provider !== 'click') {
-      throw new Error(
+      throw new PaymentValidationError(
         `Invoice URL generation is not supported for provider: ${provider}`,
       );
     }
@@ -562,7 +626,7 @@ export class PaymentsService {
     );
 
     if (missingFields.length > 0) {
-      throw new Error(
+      throw new PaymentValidationError(
         `Missing required ${provider} invoice fields: ${missingFields.join(', ')}`,
       );
     }

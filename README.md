@@ -40,6 +40,7 @@ npm install uz-payment-sdk
 
 - `PaymentResult.amount` всегда возвращается в `UZS`
 - `PaymentResult.success` вычисляется из нормализованного `status`, а не из raw provider payload
+- `PaymentResult.isTerminal`, `isSettled`, `isFinalSuccess`, `requiresAction` дают более безопасные флаги для серверного branching
 - `transactionId` — основной SDK id для дальнейших операций
 - `providerInvoiceId` и `providerPaymentId` сохраняют official ids провайдера, когда они реально есть
 - `checkoutReference` даёт стабильную ссылку на checkout/order flow без парсинга `raw`
@@ -113,6 +114,12 @@ const invoiceUrl = payments.generateInvoiceUrl({
 - `ClickClient`
 - `UzumClient`
 
+У этих методов можно передавать optional request options:
+
+- `signal`
+- `timeoutMs`
+- `retry`
+
 Для server-side интеграции также доступны helper-ы:
 
 - `createPaymentsServiceFromEnv`
@@ -121,10 +128,35 @@ const invoiceUrl = payments.generateInvoiceUrl({
 - `parseProviderWebhookRequest`
 - `processProviderWebhookRequest`
 
+Для transport integration доступны:
+
+- `createAxiosTransport`
+- `createFetchTransport`
+- `transport` и `requestDefaults` в `PaymentSdkConfig`
+
 Важно для webhook processing:
 
 - для production нужно передать shared `cacheStore` (Redis/DB-backed), иначе `WebhookService` не запустит идемпотентную обработку
 - `allowInMemoryWebhookIdempotency` оставлен только для single-process development и тестов
+
+## Error Model
+
+SDK экспортирует typed errors:
+
+- `PaymentSdkError`
+- `PaymentValidationError`
+- `PaymentConfigurationError`
+- `PaymentTransportError`
+- `PaymeError`
+- `ClickError`
+
+У typed errors доступны поля:
+
+- `code`
+- `provider`
+- `httpStatus`
+- `retryable`
+- `category`
 
 ## Support Matrix
 

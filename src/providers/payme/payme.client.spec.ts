@@ -11,14 +11,18 @@ describe('PaymeClient', () => {
     jest.clearAllMocks();
     requestSpy = jest.spyOn(axios, 'request');
 
-    driver = new PaymeClient({
-      paymeConfig: {
-        merchantId: 'cashbox-1',
-        login: 'merchant-login',
-        key: 'secret-key',
-        apiUrl: 'https://checkout.test.paycom.uz/api',
-      },
-    } as PaymentConfigService);
+    driver = new PaymeClient(
+      new PaymentConfigService({
+        providers: {
+          payme: {
+            merchantId: 'cashbox-1',
+            login: 'merchant-login',
+            key: 'secret-key',
+            apiUrl: 'https://checkout.test.paycom.uz/api',
+          },
+        },
+      }),
+    );
   });
 
   afterEach(() => {

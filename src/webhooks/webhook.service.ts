@@ -2,6 +2,10 @@ import axios from 'axios';
 import * as crypto from 'crypto';
 import { MemoryCacheStore } from '../cache/cache-store';
 import { PaymentConfigService, PaymentSdkConfig } from '../config/payment-config.service';
+import {
+  PaymentConfigurationError,
+  PaymentValidationError,
+} from '../errors/PaymentSdkError';
 import { maskSensitiveData } from '../logger/sdk-logger';
 import { fromProviderAmount } from '../payments/utils/amount.util';
 import { generateBasicAuthHeader } from '../payments/utils/signer.util';
@@ -235,7 +239,9 @@ export class WebhookService {
         signature,
       )
     ) {
-      throw new Error('Invalid Click webhook signature');
+      throw new PaymentValidationError('Invalid Click webhook signature', {
+        provider: 'click',
+      });
     }
 
     const action = Number(payload.action);
@@ -270,7 +276,9 @@ export class WebhookService {
     authorization?: string,
   ): WebhookPayload {
     if (!this.validatePaymeSignature(payload, authorization || '')) {
-      throw new Error('Invalid Payme webhook signature');
+      throw new PaymentValidationError('Invalid Payme webhook signature', {
+        provider: 'payme',
+      });
     }
 
     const orderId =
@@ -442,7 +450,7 @@ export class WebhookService {
       this.configService.cacheStore instanceof MemoryCacheStore &&
       !this.allowInMemoryWebhookIdempotency
     ) {
-      throw new Error(
+      throw new PaymentConfigurationError(
         'WebhookService requires a shared cacheStore for idempotency in multi-instance environments. Inject Redis/DB-backed cacheStore, or set allowInMemoryWebhookIdempotency only for single-process development.',
       );
     }
