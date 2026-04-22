@@ -2,9 +2,10 @@ import type { PaymentSdkConfig } from './config/payment-config.service';
 
 export { PaymentsService } from './payments/payments.service';
 export { WebhookService } from './webhooks/webhook.service';
-export { PaymeDriver } from './payments/drivers/payme.driver';
-export { ClickDriver } from './payments/drivers/click.driver';
-export { UzumDriver } from './payments/drivers/uzum.driver';
+export { SDK_RESULT_CONTRACT, SDK_SUPPORT_POLICY } from './core/contracts';
+export { PaymeClient } from './providers/payme';
+export { ClickClient } from './providers/click';
+export { UzumClient } from './providers/uzum';
 export { PaymentConfigService } from './config/payment-config.service';
 export { MemoryCacheStore } from './cache/cache-store';
 export { noopLogger } from './logger/sdk-logger';
@@ -36,6 +37,11 @@ export type {
 } from './config/payment-config.service';
 export type { SdkLogger } from './logger/sdk-logger';
 export type { PaymentDriver } from './payments/interfaces/payment-driver.interface';
+export type {
+  SdkResultContract,
+  SdkSupportPolicy,
+  SdkSupportSurface,
+} from './core/contracts';
 export type {
   ClickGenerateInvoiceParams,
   GenerateInvoiceParams,

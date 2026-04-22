@@ -1,16 +1,16 @@
 import axios from 'axios';
 import { PaymentConfigService } from '../../config/payment-config.service';
-import { UzumDriver } from './uzum.driver';
+import { UzumClient } from './uzum.client';
 
-describe('UzumDriver', () => {
-  let driver: UzumDriver;
+describe('UzumClient', () => {
+  let driver: UzumClient;
   let requestSpy: jest.SpiedFunction<typeof axios.request>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     requestSpy = jest.spyOn(axios, 'request');
 
-    driver = new UzumDriver({
+    driver = new UzumClient({
       uzumConfig: {
         terminalId: 'terminal-1',
         apiKey: 'api-key-1',

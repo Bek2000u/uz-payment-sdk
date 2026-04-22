@@ -1,18 +1,18 @@
-import type { PaymentDriver } from '../interfaces/payment-driver.interface';
 import { PaymentConfigService } from '../../config/payment-config.service';
-import { buildPaymentResult, firstDefined } from '../utils/normalizers.util';
-import { postJson } from '../utils/http-client.util';
-import {
+import type { PaymentDriver } from '../../payments/interfaces/payment-driver.interface';
+import { buildPaymentResult, firstDefined } from '../../payments/utils/normalizers.util';
+import { postJson } from '../../payments/utils/http-client.util';
+import type {
   GenerateInvoiceParams,
-} from '../types/payment.types';
+} from '../../payments/types/payment.types';
 import {
   generateBasicAuthHeader,
   generatePaymeXAuthHeader,
-} from '../utils/signer.util';
+} from '../../payments/utils/signer.util';
 import { PaymeError } from '../../errors/PaymeError';
-import { generatePaymeInvoiceUrl } from '../utils/invoice.util';
-import { fromProviderAmount, toProviderAmount } from '../utils/amount.util';
-import {
+import { generatePaymeInvoiceUrl } from '../../payments/utils/invoice.util';
+import { fromProviderAmount, toProviderAmount } from '../../payments/utils/amount.util';
+import type {
   PaymeCheckCardRequest,
   PaymeCreateCardRequest,
   PaymeCreateReceiptRequest,
@@ -29,9 +29,9 @@ import {
   PaymeSendReceiptResult,
   PaymeSetReceiptFiscalDataRequest,
   PaymeVerifyCardRequest,
-} from '../types/payme.types';
+} from '../../payments/types/payme.types';
 
-export class PaymeDriver
+export class PaymeClient
   implements
     PaymentDriver<
       PaymeCreateReceiptRequest,

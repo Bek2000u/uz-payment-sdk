@@ -1,0 +1,20 @@
+{
+  "result": {
+    "state": 4,
+    "receipt": {
+      "amount": 500000,
+      "account": {
+        "order_id": "order-1"
+      },
+      "detail": {
+        "origin": "merchant",
+        "items": [
+          {
+            "title": "Order 1",
+            "price": 500000
+          }
+        ]
+      }
+    }
+  }
+}

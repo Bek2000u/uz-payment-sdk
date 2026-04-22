@@ -1,0 +1,23 @@
+{
+  "errorCode": 0,
+  "message": "ok",
+  "result": {
+    "orderId": "fb584fdb-48d4-4b50-a7da-f15b9a7ef111",
+    "status": "REGISTERED",
+    "merchantOrderId": "order-1",
+    "amount": 150000,
+    "totalAmount": 150000,
+    "completedAmount": 0,
+    "refundedAmount": 0,
+    "reversedAmount": 0,
+    "bindingId": "binding-1",
+    "cardType": "UZCARD",
+    "operations": [
+      {
+        "operationId": "operation-1",
+        "merchantOperationId": "merchant-operation-1",
+        "state": "IN_PROGRESS"
+      }
+    ]
+  }
+}

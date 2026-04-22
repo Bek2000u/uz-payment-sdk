@@ -1,10 +1,10 @@
 import * as crypto from 'crypto';
 import { PaymentConfigService } from '../../config/payment-config.service';
-import type { PaymentDriver } from '../interfaces/payment-driver.interface';
-import { postJson } from '../utils/http-client.util';
-import { buildPaymentResult, firstDefined } from '../utils/normalizers.util';
-import { fromProviderAmount, toProviderAmount } from '../utils/amount.util';
-import {
+import type { PaymentDriver } from '../../payments/interfaces/payment-driver.interface';
+import { postJson } from '../../payments/utils/http-client.util';
+import { buildPaymentResult, firstDefined } from '../../payments/utils/normalizers.util';
+import { fromProviderAmount, toProviderAmount } from '../../payments/utils/amount.util';
+import type {
   UzumApiResponse,
   UzumCancelPaymentRequest,
   UzumCheckPaymentRequest,
@@ -23,9 +23,9 @@ import {
   UzumPurchaseReceiptResult,
   UzumRegisterPaymentRequest,
   UzumRegisterPaymentResult,
-} from '../types/uzum.types';
+} from '../../payments/types/uzum.types';
 
-export class UzumDriver
+export class UzumClient
   implements
     PaymentDriver<
       UzumRegisterPaymentRequest,

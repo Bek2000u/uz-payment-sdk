@@ -1,18 +1,18 @@
 import axios from 'axios';
 import * as crypto from 'crypto';
-import { ClickDriver } from './click.driver';
+import { ClickClient } from './click.client';
 import { PaymentConfigService } from '../../config/payment-config.service';
 import { ClickError } from '../../errors/ClickError';
 
-describe('ClickDriver', () => {
-  let driver: ClickDriver;
+describe('ClickClient', () => {
+  let driver: ClickClient;
   let requestSpy: jest.SpiedFunction<typeof axios.request>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     requestSpy = jest.spyOn(axios, 'request');
 
-    driver = new ClickDriver({
+    driver = new ClickClient({
       clickConfig: {
         serviceId: '101202',
         merchantId: 'merchant-1',

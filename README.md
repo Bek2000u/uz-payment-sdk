@@ -2,6 +2,15 @@
 
 TypeScript SDK для интеграции с `payme`, `click` и `uzum`.
 
+Быстрая документация для интегратора лежит в:
+
+- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/README.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/README.md)
+- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/getting-started.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/getting-started.md)
+- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/nextjs.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/nextjs.md)
+- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/providers.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/providers.md)
+- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/webhooks.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/webhooks.md)
+- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/testing.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/testing.md)
+
 ## Install
 
 ```bash
@@ -23,6 +32,21 @@ npm install uz-payment-sdk
 - webhook payloads и normalized responses
 
 Внутри драйверов SDK сам конвертирует сумму в provider-specific формат там, где провайдер ожидает минимальные единицы валюты.
+
+## Stable Contract
+
+Для интеграции можно считать стабильными такие правила:
+
+- `PaymentResult.amount` всегда возвращается в `UZS`
+- `PaymentResult.success` вычисляется из нормализованного `status`, а не из raw provider payload
+- `transactionId` — основной SDK id для дальнейших операций
+- `providerInvoiceId` и `providerPaymentId` сохраняют official ids провайдера, когда они реально есть
+- `checkoutReference` даёт стабильную ссылку на checkout/order flow без парсинга `raw`
+
+Эти правила зафиксированы и экспортируются из SDK как:
+
+- `SDK_RESULT_CONTRACT`
+- `SDK_SUPPORT_POLICY`
 
 ## Quick Start
 
@@ -81,6 +105,12 @@ const invoiceUrl = payments.generateInvoiceUrl({
 - `merchantPayUzum`
 - `getUzumReceipts`
 - `purchaseUzumReceipt`
+
+Если нужен более низкий уровень, можно работать напрямую с provider clients:
+
+- `PaymeClient`
+- `ClickClient`
+- `UzumClient`
 
 ## Support Matrix
 
@@ -182,12 +212,20 @@ helper-ы для `Uzum Merchant API` повторяют официальный w
 
 ## Repo Layout
 
-- `src` — core SDK
+- `src/core` — стабильные SDK contracts и общие правила
+- `src/providers/payme` — low-level Payme client
+- `src/providers/click` — low-level Click client
+- `src/providers/uzum` — low-level Uzum client
+- `src/payments` — high-level facade и нормализация результатов
+- `src/webhooks` — webhook parsing, normalization и Uzum merchant toolkit
 - `docs/examples` — минимальные примеры интеграции
 
 ## Scripts
 
 - `npm run typecheck`
+- `npm run test:contracts`
 - `npm test`
+- `npm run test:bun`
+- `npm run test:matrix`
 - `npm run build`
 - `npm run release:smoke`

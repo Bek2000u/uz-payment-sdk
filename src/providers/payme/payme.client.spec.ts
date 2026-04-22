@@ -1,17 +1,17 @@
 import axios from 'axios';
-import { PaymeDriver } from './payme.driver';
+import { PaymeClient } from './payme.client';
 import { PaymentConfigService } from '../../config/payment-config.service';
 import { PaymeError } from '../../errors/PaymeError';
 
-describe('PaymeDriver', () => {
-  let driver: PaymeDriver;
+describe('PaymeClient', () => {
+  let driver: PaymeClient;
   let requestSpy: jest.SpiedFunction<typeof axios.request>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     requestSpy = jest.spyOn(axios, 'request');
 
-    driver = new PaymeDriver({
+    driver = new PaymeClient({
       paymeConfig: {
         merchantId: 'cashbox-1',
         login: 'merchant-login',

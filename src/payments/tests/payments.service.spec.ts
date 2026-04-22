@@ -56,7 +56,7 @@ describe('PaymentsService', () => {
     };
 
     jest
-      .spyOn(service.paymeDriver, 'createPayment')
+      .spyOn(service.paymeClient, 'createPayment')
       .mockResolvedValue(mockResponse);
 
     const result = await service.create({
@@ -65,7 +65,7 @@ describe('PaymentsService', () => {
       amount: 1000,
     });
 
-    expect(service.paymeDriver.createPayment).toHaveBeenCalledWith({
+    expect(service.paymeClient.createPayment).toHaveBeenCalledWith({
       orderId: 'test',
       amount: 1000,
     });
@@ -146,14 +146,14 @@ describe('PaymentsService', () => {
     };
 
     jest
-      .spyOn(service.clickDriver, 'cancelPayment')
+      .spyOn(service.clickClient, 'cancelPayment')
       .mockResolvedValue(mockResponse);
 
     const result = await service.cancelClickPayment({
       paymentId: 'click-payment-1',
     });
 
-    expect(service.clickDriver.cancelPayment).toHaveBeenCalledWith({
+    expect(service.clickClient.cancelPayment).toHaveBeenCalledWith({
       paymentId: 'click-payment-1',
     });
     expect(result).toEqual(mockResponse);
@@ -168,7 +168,7 @@ describe('PaymentsService', () => {
     };
 
     jest
-      .spyOn(service.uzumDriver, 'refundPayment')
+      .spyOn(service.uzumClient, 'refundPayment')
       .mockResolvedValue(mockResponse);
 
     const result = await service.refundUzumPayment({
@@ -176,7 +176,7 @@ describe('PaymentsService', () => {
       amount: 1000,
     });
 
-    expect(service.uzumDriver.refundPayment).toHaveBeenCalledWith({
+    expect(service.uzumClient.refundPayment).toHaveBeenCalledWith({
       orderId: 'order-1',
       amount: 1000,
     });

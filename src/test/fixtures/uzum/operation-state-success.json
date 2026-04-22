@@ -1,0 +1,11 @@
+{
+  "errorCode": 0,
+  "message": "ok",
+  "result": {
+    "operation": {
+      "operationId": "operation-2",
+      "state": "SUCCESS",
+      "rrn": "rrn-1"
+    }
+  }
+}

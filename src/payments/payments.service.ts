@@ -3,9 +3,9 @@ import {
   PaymentSdkConfig,
 } from '../config/payment-config.service';
 import { maskSensitiveData } from '../logger/sdk-logger';
-import { ClickDriver } from './drivers/click.driver';
-import { PaymeDriver } from './drivers/payme.driver';
-import { UzumDriver } from './drivers/uzum.driver';
+import { ClickClient } from '../providers/click/click.client';
+import { PaymeClient } from '../providers/payme/payme.client';
+import { UzumClient } from '../providers/uzum/uzum.client';
 import {
   ClickGenerateInvoiceParams,
   GenerateInvoiceParams,
@@ -60,15 +60,15 @@ type PaymentRequest = {
 
 export class PaymentsService {
   readonly configService: PaymentConfigService;
-  readonly paymeDriver: PaymeDriver;
-  readonly clickDriver: ClickDriver;
-  readonly uzumDriver: UzumDriver;
+  readonly paymeClient: PaymeClient;
+  readonly clickClient: ClickClient;
+  readonly uzumClient: UzumClient;
 
   constructor(config: PaymentSdkConfig = {}) {
     this.configService = new PaymentConfigService(config);
-    this.paymeDriver = new PaymeDriver(this.configService);
-    this.clickDriver = new ClickDriver(this.configService);
-    this.uzumDriver = new UzumDriver(this.configService);
+    this.paymeClient = new PaymeClient(this.configService);
+    this.clickClient = new ClickClient(this.configService);
+    this.uzumClient = new UzumClient(this.configService);
 
     this.configService.logger.info?.('PaymentsService initialized', {
       providers: PAYMENT_PROVIDERS,
@@ -103,156 +103,156 @@ export class PaymentsService {
     data: ClickCreateInvoiceRequest,
   ): Promise<ClickPaymentResult> {
     this.configService.assertProviderCredentials('click');
-    return this.clickDriver.createPayment(data);
+    return this.clickClient.createPayment(data);
   }
 
   async checkClickInvoice(
     data: ClickCheckInvoiceRequest,
   ): Promise<ClickPaymentResult> {
     this.configService.assertProviderCredentials('click');
-    return this.clickDriver.checkPayment(data);
+    return this.clickClient.checkPayment(data);
   }
 
   async checkClickPayment(
     data: ClickCheckPaymentRequest,
   ): Promise<ClickPaymentResult> {
     this.configService.assertProviderCredentials('click');
-    return this.clickDriver.checkPayment(data);
+    return this.clickClient.checkPayment(data);
   }
 
   async checkClickPaymentByOrder(
     data: ClickCheckPaymentByMerchantTransIdRequest,
   ): Promise<ClickPaymentResult> {
     this.configService.assertProviderCredentials('click');
-    return this.clickDriver.checkPayment(data);
+    return this.clickClient.checkPayment(data);
   }
 
   async cancelClickPayment(
     data: ClickCancelPaymentRequest,
   ): Promise<ClickPaymentResult> {
     this.configService.assertProviderCredentials('click');
-    return this.clickDriver.cancelPayment(data);
+    return this.clickClient.cancelPayment(data);
   }
 
   async submitClickFiscalItems(data: ClickSubmitFiscalItemsRequest) {
     this.configService.assertProviderCredentials('click');
-    return this.clickDriver.submitFiscalItems(data);
+    return this.clickClient.submitFiscalItems(data);
   }
 
   async submitClickFiscalQrCode(data: ClickSubmitFiscalQrCodeRequest) {
     this.configService.assertProviderCredentials('click');
-    return this.clickDriver.submitFiscalQrCode(data);
+    return this.clickClient.submitFiscalQrCode(data);
   }
 
   async getClickFiscalData(paymentId: string): Promise<ClickFiscalDataResponse> {
     this.configService.assertProviderCredentials('click');
-    return this.clickDriver.getFiscalData(paymentId);
+    return this.clickClient.getFiscalData(paymentId);
   }
 
   async createPaymeReceipt(
     data: PaymeCreateReceiptRequest,
   ): Promise<PaymePaymentResult> {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.createPayment(data);
+    return this.paymeClient.createPayment(data);
   }
 
   async checkPaymeReceipt(
     data: PaymeReceiptLookupRequest,
   ): Promise<PaymePaymentResult> {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.checkPayment(data);
+    return this.paymeClient.checkPayment(data);
   }
 
   async cancelPaymeReceipt(
     data: PaymeReceiptLookupRequest,
   ): Promise<PaymePaymentResult> {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.cancelPayment(data);
+    return this.paymeClient.cancelPayment(data);
   }
 
   async getPaymeReceipt(data: PaymeReceiptLookupRequest) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.getReceipt(data);
+    return this.paymeClient.getReceipt(data);
   }
 
   async sendPaymeReceipt(data: PaymeSendReceiptRequest) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.sendReceipt(data);
+    return this.paymeClient.sendReceipt(data);
   }
 
   async payPaymeReceipt(
     data: PaymePayReceiptRequest,
   ): Promise<PaymePaymentResult> {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.payReceipt(data);
+    return this.paymeClient.payReceipt(data);
   }
 
   async setPaymeReceiptFiscalData(data: PaymeSetReceiptFiscalDataRequest) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.setReceiptFiscalData(data);
+    return this.paymeClient.setReceiptFiscalData(data);
   }
 
   async createPaymeCard(data: PaymeCreateCardRequest) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.createCard(data);
+    return this.paymeClient.createCard(data);
   }
 
   async requestPaymeCardVerifyCode(data: PaymeGetCardVerifyCodeRequest) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.getCardVerifyCode(data);
+    return this.paymeClient.getCardVerifyCode(data);
   }
 
   async verifyPaymeCard(data: PaymeVerifyCardRequest) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.verifyCard(data);
+    return this.paymeClient.verifyCard(data);
   }
 
   async checkPaymeCard(data: PaymeCheckCardRequest) {
     this.configService.assertProviderCredentials('payme');
-    return this.paymeDriver.checkCard(data);
+    return this.paymeClient.checkCard(data);
   }
 
   async registerUzumPayment(
     data: UzumRegisterPaymentRequest,
   ): Promise<UzumPaymentResult> {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumDriver.createPayment(data);
+    return this.uzumClient.createPayment(data);
   }
 
   async completeUzumPayment(
     data: UzumOperationCommand,
   ): Promise<UzumPaymentResult> {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumDriver.completePayment(data);
+    return this.uzumClient.completePayment(data);
   }
 
   async reverseUzumPayment(
     data: UzumOperationCommand,
   ): Promise<UzumPaymentResult> {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumDriver.cancelPayment(data);
+    return this.uzumClient.cancelPayment(data);
   }
 
   async refundUzumPayment(
     data: UzumOperationCommand,
   ): Promise<UzumPaymentResult> {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumDriver.refundPayment(data);
+    return this.uzumClient.refundPayment(data);
   }
 
   async merchantPayUzum(data: UzumMerchantPayRequest) {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumDriver.merchantPay(data);
+    return this.uzumClient.merchantPay(data);
   }
 
   async getUzumReceipts(data: UzumGetReceiptsRequest) {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumDriver.getReceipts(data);
+    return this.uzumClient.getReceipts(data);
   }
 
   async purchaseUzumReceipt(data: UzumPurchaseReceiptRequest) {
     this.configService.assertProviderCredentials('uzum');
-    return this.uzumDriver.purchaseReceipt(data);
+    return this.uzumClient.purchaseReceipt(data);
   }
 
   generateInvoiceUrl(
@@ -397,23 +397,23 @@ export class PaymentsService {
     switch (provider) {
       case 'payme':
         if (operation === 'cancel') {
-          return this.paymeDriver.cancelPayment(data as unknown as PaymeReceiptLookupRequest);
+          return this.paymeClient.cancelPayment(data as unknown as PaymeReceiptLookupRequest);
         }
         return operation === 'create'
-          ? this.paymeDriver.createPayment(data as unknown as PaymeCreateReceiptRequest)
-          : this.paymeDriver.checkPayment(data as unknown as PaymeReceiptLookupRequest);
+          ? this.paymeClient.createPayment(data as unknown as PaymeCreateReceiptRequest)
+          : this.paymeClient.checkPayment(data as unknown as PaymeReceiptLookupRequest);
       case 'click':
         return operation === 'create'
-          ? this.clickDriver.createPayment(data as unknown as ClickCreateInvoiceRequest)
+          ? this.clickClient.createPayment(data as unknown as ClickCreateInvoiceRequest)
           : operation === 'check'
-            ? this.clickDriver.checkPayment(data as unknown as ClickCheckRequest)
-            : this.clickDriver.cancelPayment(data as unknown as ClickCancelPaymentRequest);
+            ? this.clickClient.checkPayment(data as unknown as ClickCheckRequest)
+            : this.clickClient.cancelPayment(data as unknown as ClickCancelPaymentRequest);
       case 'uzum':
         return operation === 'create'
-          ? this.uzumDriver.createPayment(data as unknown as UzumRegisterPaymentRequest)
+          ? this.uzumClient.createPayment(data as unknown as UzumRegisterPaymentRequest)
           : operation === 'check'
-            ? this.uzumDriver.checkPayment(data as unknown as UzumCheckPaymentRequest)
-            : this.uzumDriver.cancelPayment(data as unknown as UzumCancelPaymentRequest);
+            ? this.uzumClient.checkPayment(data as unknown as UzumCheckPaymentRequest)
+            : this.uzumClient.cancelPayment(data as unknown as UzumCancelPaymentRequest);
       default:
         throw new Error(`Qo'llab-quvvatlanmaydigan provider: ${provider}`);
     }
@@ -425,9 +425,9 @@ export class PaymentsService {
   ): string {
     switch (provider) {
       case 'payme':
-        return this.paymeDriver.generateInvoiceUrl(this.toGenerateInvoiceParams(data));
+        return this.paymeClient.generateInvoiceUrl(this.toGenerateInvoiceParams(data));
       case 'click':
-        return this.clickDriver.generateInvoiceUrl(
+        return this.clickClient.generateInvoiceUrl(
           this.toClickGenerateInvoiceParams(data),
         );
       default:

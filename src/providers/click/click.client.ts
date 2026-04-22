@@ -1,16 +1,14 @@
-import type { PaymentDriver } from '../interfaces/payment-driver.interface';
-import { PaymentConfigService } from '../../config/payment-config.service';
 import * as crypto from 'crypto';
-import { buildPaymentResult } from '../utils/normalizers.util';
-import { deleteJson, getJson, postJson } from '../utils/http-client.util';
-import {
-  ClickGenerateInvoiceParams,
-} from '../types/payment.types';
-import { generateClickMerchantAuthHeader } from '../utils/signer.util';
+import { PaymentConfigService } from '../../config/payment-config.service';
+import type { PaymentDriver } from '../../payments/interfaces/payment-driver.interface';
+import { buildPaymentResult } from '../../payments/utils/normalizers.util';
+import { deleteJson, getJson, postJson } from '../../payments/utils/http-client.util';
+import type { ClickGenerateInvoiceParams } from '../../payments/types/payment.types';
+import { generateClickMerchantAuthHeader } from '../../payments/utils/signer.util';
 import { ClickError } from '../../errors/ClickError';
-import { generateClickInvoiceUrl } from '../utils/invoice.util';
-import { toProviderAmount } from '../utils/amount.util';
-import {
+import { generateClickInvoiceUrl } from '../../payments/utils/invoice.util';
+import { toProviderAmount } from '../../payments/utils/amount.util';
+import type {
   ClickApiResponseBase,
   ClickCancelPaymentRequest,
   ClickCheckRequest,
@@ -23,11 +21,11 @@ import {
   ClickPaymentReversalResponse,
   ClickSubmitFiscalItemsRequest,
   ClickSubmitFiscalQrCodeRequest,
-} from '../types/click.types';
+} from '../../payments/types/click.types';
 
 type ClickConfig = PaymentConfigService['clickConfig'];
 
-export class ClickDriver
+export class ClickClient
   implements
     PaymentDriver<
       ClickCreateInvoiceRequest,
