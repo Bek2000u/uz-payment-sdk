@@ -2,8 +2,6 @@
 
 TypeScript SDK для интеграции с `payme`, `click` и `uzum`.
 
-Репозиторий очищен до SDK-only формата: без отдельного app-слоя, без Nest bootstrap как обязательной части, без legacy-провайдеров и без бренд-зависимого core-конфига.
-
 ## Install
 
 ```bash
