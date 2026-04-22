@@ -43,6 +43,7 @@ export interface PaymentSdkConfig {
   env?: EnvSource;
   logger?: SdkLogger;
   cacheStore?: CacheStore;
+  webhookEventHistoryLimit?: number;
 }
 
 export class PaymentConfigService {

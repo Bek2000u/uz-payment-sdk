@@ -46,6 +46,7 @@ export class WebhookService {
   readonly configService: PaymentConfigService;
   private readonly webhookEvents: WebhookEvent[] = [];
   private readonly idempotencyTtlSec: number;
+  private readonly webhookEventHistoryLimit: number;
 
   constructor(config: PaymentSdkConfig = {}) {
     this.configService = new PaymentConfigService(config);
@@ -53,6 +54,15 @@ export class WebhookService {
       config.env?.WEBHOOK_IDEMPOTENCY_TTL_SEC ||
         process.env.WEBHOOK_IDEMPOTENCY_TTL_SEC ||
         3600,
+    );
+    this.webhookEventHistoryLimit = Math.max(
+      0,
+      Number(
+        config.webhookEventHistoryLimit ??
+          config.env?.WEBHOOK_EVENT_HISTORY_LIMIT ??
+          process.env.WEBHOOK_EVENT_HISTORY_LIMIT ??
+          100,
+      ),
     );
   }
 
@@ -88,7 +98,7 @@ export class WebhookService {
       processed: false,
     };
 
-    this.webhookEvents.push(event);
+    this.rememberEvent(event);
     this.configService.logger.info?.('Webhook event created', {
       eventId,
       provider: webhookData.provider,
@@ -403,5 +413,20 @@ export class WebhookService {
     }
 
     return new Date().toISOString();
+  }
+
+  private rememberEvent(event: WebhookEvent): void {
+    if (this.webhookEventHistoryLimit <= 0) {
+      return;
+    }
+
+    this.webhookEvents.push(event);
+
+    if (this.webhookEvents.length > this.webhookEventHistoryLimit) {
+      this.webhookEvents.splice(
+        0,
+        this.webhookEvents.length - this.webhookEventHistoryLimit,
+      );
+    }
   }
 }

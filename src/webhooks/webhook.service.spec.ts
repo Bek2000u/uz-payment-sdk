@@ -74,6 +74,45 @@ describe('WebhookService', () => {
     expect(postSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps bounded webhook history for long-lived services', async () => {
+    postSpy.mockResolvedValue({ data: { ok: true } } as never);
+
+    const boundedService = new WebhookService({
+      cacheStore: new MemoryCacheStore(),
+      webhookEventHistoryLimit: 2,
+    });
+
+    await boundedService.processWebhook({
+      provider: 'click',
+      transactionId: 'trx-1',
+      orderId: 'order-1',
+      amount: 1000,
+      status: 'success',
+      timestamp: new Date('2026-04-22T10:00:00.000Z').toISOString(),
+    });
+    await boundedService.processWebhook({
+      provider: 'click',
+      transactionId: 'trx-2',
+      orderId: 'order-2',
+      amount: 1000,
+      status: 'success',
+      timestamp: new Date('2026-04-22T10:01:00.000Z').toISOString(),
+    });
+    await boundedService.processWebhook({
+      provider: 'click',
+      transactionId: 'trx-3',
+      orderId: 'order-3',
+      amount: 1000,
+      status: 'success',
+      timestamp: new Date('2026-04-22T10:02:00.000Z').toISOString(),
+    });
+
+    expect(boundedService.getWebhookEvents()).toHaveLength(2);
+    expect(
+      boundedService.getWebhookEvents().map((event) => event.data.transactionId),
+    ).toEqual(['trx-3', 'trx-2']);
+  });
+
   it('forwards normalized enterprise webhook envelope using generic forwarding config', async () => {
     postSpy.mockResolvedValue({ data: { ok: true } } as never);
 

@@ -43,8 +43,10 @@ export const readWebhookRequestBody = async (
 export const parseProviderWebhookRequest = async ({
   provider,
   request,
-  webhookService = new WebhookService(),
+  webhookService,
+  config,
 }: ParseWebhookRequestOptions): Promise<WebhookPayload> => {
+  const service = webhookService || new WebhookService(config);
   const rawBody = await readWebhookRequestBody(request);
   const contentType = getHeader(request.headers, 'content-type') || '';
 
@@ -53,13 +55,13 @@ export const parseProviderWebhookRequest = async ({
       ? parseUrlEncodedBody(rawBody)
       : (JSON.parse(rawBody) as Record<string, unknown>);
 
-    return webhookService.parseClickWebhook(payload as never);
+    return service.parseClickWebhook(payload as never);
   }
 
   const payload = JSON.parse(rawBody);
   const authorization = getHeader(request.headers, 'authorization');
 
-  return webhookService.parsePaymeWebhook(payload, authorization);
+  return service.parsePaymeWebhook(payload, authorization);
 };
 
 export const processProviderWebhookRequest = async (

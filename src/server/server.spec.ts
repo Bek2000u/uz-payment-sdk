@@ -153,4 +153,55 @@ describe('server helpers', () => {
     expect(payload.amount).toBe(500);
     expect(processSpy).toHaveBeenCalledWith(payload);
   });
+
+  it('uses provided config when parsing webhook without a prebuilt service', async () => {
+    const validateSpy = jest
+      .spyOn(WebhookService.prototype, 'validatePaymeSignature')
+      .mockImplementation(function (this: WebhookService) {
+        expect(this.configService.paymeConfig).toEqual(
+          expect.objectContaining({
+            merchantId: 'cashbox-2',
+            login: 'merchant-login-2',
+            key: 'secret-key-2',
+          }),
+        );
+        return true;
+      });
+
+    const payload = await parseProviderWebhookRequest({
+      provider: 'payme',
+      request: createRequest(
+        JSON.stringify({
+          id: 'rpc-2',
+          method: 'PerformTransaction',
+          params: {
+            id: 'txn-2',
+            time: 1710000000000,
+            amount: 25000,
+            account: {
+              order_id: 'order-2',
+            },
+          },
+        }),
+        {
+          'content-type': 'application/json',
+          authorization: 'Basic c2lnbmF0dXJl',
+        },
+      ),
+      config: {
+        providers: {
+          payme: {
+            merchantId: 'cashbox-2',
+            login: 'merchant-login-2',
+            key: 'secret-key-2',
+            apiUrl: 'https://checkout.test.paycom.uz/api',
+          },
+        },
+      },
+    });
+
+    expect(validateSpy).toHaveBeenCalledWith(expect.any(Object), 'Basic c2lnbmF0dXJl');
+    expect(payload.transactionId).toBe('txn-2');
+    expect(payload.amount).toBe(250);
+  });
 });
