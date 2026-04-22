@@ -44,6 +44,7 @@ export interface PaymentSdkConfig {
   logger?: SdkLogger;
   cacheStore?: CacheStore;
   webhookEventHistoryLimit?: number;
+  allowInMemoryWebhookIdempotency?: boolean;
 }
 
 export class PaymentConfigService {

@@ -9,6 +9,13 @@
 - парсить raw `Click` webhook
 - парсить raw `Payme` webhook
 
+## Idempotency Store
+
+Для production webhook dedupe нужен shared `cacheStore`.
+
+- рекомендуемый вариант: Redis/DB-backed store
+- `MemoryCacheStore` теперь допустим только при явном `allowInMemoryWebhookIdempotency` и только для single-process dev/test
+
 ## Provider Parsing
 
 Используй:

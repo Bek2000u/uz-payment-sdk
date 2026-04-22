@@ -121,6 +121,11 @@ const invoiceUrl = payments.generateInvoiceUrl({
 - `parseProviderWebhookRequest`
 - `processProviderWebhookRequest`
 
+Важно для webhook processing:
+
+- для production нужно передать shared `cacheStore` (Redis/DB-backed), иначе `WebhookService` не запустит идемпотентную обработку
+- `allowInMemoryWebhookIdempotency` оставлен только для single-process development и тестов
+
 ## Support Matrix
 
 | Provider | Covered now | Notes |

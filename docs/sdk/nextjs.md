@@ -12,6 +12,7 @@ SDK лучше использовать только на сервере:
 2. Вызывать `PaymentsService` из route handlers.
 3. Держать merchant secrets только в server env.
 4. webhook endpoints принимать отдельно от create/check/cancel routes.
+5. для webhook idempotency использовать shared `cacheStore`, а не in-memory default.
 
 Если не хочется руками создавать сервисы, можно использовать:
 
@@ -71,5 +72,7 @@ export async function POST(request: Request) {
   return Response.json({ ok: true, payload });
 }
 ```
+
+Для production это нужно создавать с shared store, например Redis-backed `cacheStore`. In-memory режим подходит только для локальной разработки и тестов.
 
 Готовый пример лежит в [/mnt/data/projects/business/uz-pay-sdk/docs/examples/next-webhook-route.ts](/mnt/data/projects/business/uz-pay-sdk/docs/examples/next-webhook-route.ts).

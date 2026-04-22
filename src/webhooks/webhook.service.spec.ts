@@ -13,6 +13,7 @@ describe('WebhookService', () => {
 
     service = new WebhookService({
       cacheStore: new MemoryCacheStore(),
+      allowInMemoryWebhookIdempotency: true,
       enterpriseWebhookForwarding: {
         enabled: true,
         url: 'https://hooks.example.test/payments/webhook',
@@ -55,6 +56,23 @@ describe('WebhookService', () => {
     expect(service.getWebhookEvents()[0].processed).toBe(true);
   });
 
+  it('requires shared cache store unless in-memory mode is explicitly allowed', async () => {
+    const strictService = new WebhookService();
+
+    await expect(
+      strictService.processWebhook({
+        provider: 'click',
+        transactionId: 'trx-strict-1',
+        orderId: 'order-strict-1',
+        amount: 1000,
+        status: 'success',
+        timestamp: new Date().toISOString(),
+      }),
+    ).rejects.toThrow(
+      'WebhookService requires a shared cacheStore for idempotency in multi-instance environments.',
+    );
+  });
+
   it('skips duplicate events already reserved in cache', async () => {
     postSpy.mockResolvedValue({ data: { ok: true } } as never);
 
@@ -79,6 +97,7 @@ describe('WebhookService', () => {
 
     const boundedService = new WebhookService({
       cacheStore: new MemoryCacheStore(),
+      allowInMemoryWebhookIdempotency: true,
       webhookEventHistoryLimit: 2,
     });
 

@@ -4,7 +4,18 @@ import {
 } from 'uz-payment-sdk';
 import { NextResponse } from 'next/server';
 
-const webhooks = createWebhookServiceFromEnv();
+const webhooks = createWebhookServiceFromEnv({
+  cacheStore: {
+    async get() {
+      return null;
+    },
+    async set() {},
+    async setIfNotExists() {
+      return true;
+    },
+    async del() {},
+  },
+});
 
 export async function POST(request: Request) {
   const payload = await processProviderWebhookRequest({

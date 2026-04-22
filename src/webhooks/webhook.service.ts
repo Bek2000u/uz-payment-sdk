@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as crypto from 'crypto';
+import { MemoryCacheStore } from '../cache/cache-store';
 import { PaymentConfigService, PaymentSdkConfig } from '../config/payment-config.service';
 import { maskSensitiveData } from '../logger/sdk-logger';
 import { fromProviderAmount } from '../payments/utils/amount.util';
@@ -47,6 +48,7 @@ export class WebhookService {
   private readonly webhookEvents: WebhookEvent[] = [];
   private readonly idempotencyTtlSec: number;
   private readonly webhookEventHistoryLimit: number;
+  private readonly allowInMemoryWebhookIdempotency: boolean;
 
   constructor(config: PaymentSdkConfig = {}) {
     this.configService = new PaymentConfigService(config);
@@ -64,9 +66,14 @@ export class WebhookService {
           100,
       ),
     );
+    this.allowInMemoryWebhookIdempotency =
+      config.allowInMemoryWebhookIdempotency === true ||
+      config.env?.ALLOW_IN_MEMORY_WEBHOOK_IDEMPOTENCY === 'true' ||
+      process.env.ALLOW_IN_MEMORY_WEBHOOK_IDEMPOTENCY === 'true';
   }
 
   async processWebhook(webhookData: WebhookPayload): Promise<void> {
+    this.assertSharedIdempotencyStore();
     const eventKey = this.buildEventKey(webhookData);
     const idempotencyKey = `webhook:idempotency:${eventKey}`;
     const reserved = await this.configService.cacheStore.setIfNotExists?.(
@@ -426,6 +433,17 @@ export class WebhookService {
       this.webhookEvents.splice(
         0,
         this.webhookEvents.length - this.webhookEventHistoryLimit,
+      );
+    }
+  }
+
+  private assertSharedIdempotencyStore(): void {
+    if (
+      this.configService.cacheStore instanceof MemoryCacheStore &&
+      !this.allowInMemoryWebhookIdempotency
+    ) {
+      throw new Error(
+        'WebhookService requires a shared cacheStore for idempotency in multi-instance environments. Inject Redis/DB-backed cacheStore, or set allowInMemoryWebhookIdempotency only for single-process development.',
       );
     }
   }
