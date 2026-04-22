@@ -48,7 +48,7 @@ export async function POST() {
 }
 ```
 
-Готовый пример есть в [/mnt/data/projects/business/uz-pay-sdk/docs/examples/next-route.ts](/mnt/data/projects/business/uz-pay-sdk/docs/examples/next-route.ts).
+Готовый пример есть в [docs/examples/next-route.ts](../examples/next-route.ts).
 
 ## Webhook Route
 
@@ -75,4 +75,4 @@ export async function POST(request: Request) {
 
 Для production это нужно создавать с shared store, например Redis-backed `cacheStore`. In-memory режим подходит только для локальной разработки и тестов.
 
-Готовый пример лежит в [/mnt/data/projects/business/uz-pay-sdk/docs/examples/next-webhook-route.ts](/mnt/data/projects/business/uz-pay-sdk/docs/examples/next-webhook-route.ts).
+Готовый пример лежит в [docs/examples/next-webhook-route.ts](../examples/next-webhook-route.ts).

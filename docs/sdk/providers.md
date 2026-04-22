@@ -21,7 +21,7 @@ SDK покрывает:
 - optional card token flow
 
 Reference:
-- [/mnt/data/projects/business/uz-pay-sdk/docs/payme](/mnt/data/projects/business/uz-pay-sdk/docs/payme)
+- [Payme Docs](../payme)
 
 ## Click
 
@@ -36,7 +36,7 @@ SDK покрывает:
 - fiscalization endpoints
 
 Reference:
-- [/mnt/data/projects/business/uz-pay-sdk/docs/click](/mnt/data/projects/business/uz-pay-sdk/docs/click)
+- [Click Docs](../click)
 
 ## Uzum
 
@@ -53,4 +53,4 @@ SDK покрывает:
 - `acquiring.purchaseReceipt`
 
 Reference:
-- [/mnt/data/projects/business/uz-pay-sdk/docs/uzum](/mnt/data/projects/business/uz-pay-sdk/docs/uzum)
+- [Uzum Docs](../uzum)

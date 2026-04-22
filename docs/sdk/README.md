@@ -2,18 +2,18 @@
 
 Короткая навигация по SDK-докам:
 
-- [Getting Started](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/getting-started.md)
-- [Next.js Integration](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/nextjs.md)
-- [Provider Guides](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/providers.md)
-- [Webhook Guide](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/webhooks.md)
-- [Testing Matrix](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/testing.md)
-- [Releasing](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/releasing.md)
+- [Getting Started](getting-started.md)
+- [Next.js Integration](nextjs.md)
+- [Provider Guides](providers.md)
+- [Webhook Guide](webhooks.md)
+- [Testing Matrix](testing.md)
+- [Releasing](releasing.md)
 
 Официальные исходные материалы провайдеров лежат отдельно:
 
-- `/mnt/data/projects/business/uz-pay-sdk/docs/payme`
-- `/mnt/data/projects/business/uz-pay-sdk/docs/click`
-- `/mnt/data/projects/business/uz-pay-sdk/docs/uzum`
+- [Payme Docs](../payme)
+- [Click Docs](../click)
+- [Uzum Docs](../uzum)
 
 Практический подход такой:
 

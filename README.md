@@ -4,13 +4,13 @@ TypeScript SDK для интеграции с `payme`, `click` и `uzum`.
 
 Быстрая документация для интегратора лежит в:
 
-- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/README.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/README.md)
-- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/getting-started.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/getting-started.md)
-- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/nextjs.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/nextjs.md)
-- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/providers.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/providers.md)
-- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/webhooks.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/webhooks.md)
-- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/testing.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/testing.md)
-- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/releasing.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/releasing.md)
+- [SDK Docs](docs/sdk/README.md)
+- [Getting Started](docs/sdk/getting-started.md)
+- [Next.js Integration](docs/sdk/nextjs.md)
+- [Provider Guides](docs/sdk/providers.md)
+- [Webhook Guide](docs/sdk/webhooks.md)
+- [Testing Matrix](docs/sdk/testing.md)
+- [Releasing](docs/sdk/releasing.md)
 
 ## Install
 
