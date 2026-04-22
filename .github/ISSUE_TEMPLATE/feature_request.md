@@ -3,7 +3,7 @@ name: ✨ Feature Request
 about: Suggest an idea for this project
 title: '[FEATURE] '
 labels: enhancement
-assignees: Ilnur72
+assignees:
 ---
 
 ## 🚀 **Feature Description**
@@ -24,18 +24,15 @@ Describe the solution you'd like to see implemented.
 Which payment systems would this feature affect?
 - [ ] Payme
 - [ ] Click
-- [ ] UzCard  
-- [ ] Humo
-- [ ] Apelsin
+- [ ] Uzum
 - [ ] All providers
 - [ ] SDK infrastructure
-- [ ] Mobile SDK
 
 ## 📱 **Platform**
 Which platform would benefit from this feature?
-- [ ] Server SDK (Node.js)
-- [ ] Mobile SDK (React Native)
-- [ ] Both platforms
+- [ ] Node.js / backend
+- [ ] Next.js / server routes
+- [ ] Framework-agnostic TypeScript
 - [ ] Documentation
 - [ ] Developer tools
 
@@ -60,6 +57,6 @@ Add any other context, mockups, or examples about the feature request here.
 
 ## ✅ **Checklist**
 - [ ] I have searched for existing feature requests
-- [ ] I have read the roadmap and documentation
+- [ ] I have read the documentation
 - [ ] This feature aligns with the project goals
 - [ ] I would be willing to help implement this feature

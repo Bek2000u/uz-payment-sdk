@@ -10,16 +10,13 @@
 - [ ] 🔧 Refactoring (no functional changes)
 - [ ] ⚡ Performance improvement
 - [ ] 🧪 Test improvements
-- [ ] 🏦 Bank integration (payment provider related)
-- [ ] 📱 Mobile SDK changes
+- [ ] 🏦 Payment provider integration
 
 ## 🏦 **Affected Payment Providers**
 <!-- Check all that apply -->
 - [ ] Payme
 - [ ] Click  
-- [ ] UzCard
-- [ ] Humo
-- [ ] Apelsin
+- [ ] Uzum
 - [ ] All providers
 - [ ] SDK infrastructure only
 
@@ -29,7 +26,6 @@
 - [ ] New tests added for new functionality
 - [ ] Manual testing completed
 - [ ] Integration testing with payment providers
-- [ ] Mobile SDK testing (if applicable)
 
 ### **Test Details:**
 ```
@@ -60,7 +56,6 @@ Related to #(issue number)
 - [ ] README.md updated
 - [ ] API documentation updated  
 - [ ] Code comments added/updated
-- [ ] CHANGELOG.md updated
 - [ ] Examples updated
 
 ## ⚡ **Performance Impact**
@@ -93,18 +88,10 @@ Explain any security considerations
 - Change 2: Description and migration steps
 ```
 
-## 📱 **Mobile SDK Impact**
-<!-- If changes affect mobile SDK -->
-- [ ] No mobile impact
-- [ ] React Native SDK updated
-- [ ] Mobile examples updated
-- [ ] Mobile documentation updated
-
-## 🚀 **Deployment Notes**
+## 🚀 **Release Notes**
 <!-- Any special deployment considerations -->
 - [ ] No special deployment needed
 - [ ] Environment variables updated
-- [ ] Database changes required
 - [ ] API version bump needed
 
 ## 🤝 **Reviewer Notes**
@@ -115,11 +102,6 @@ Please pay special attention to:
 - Area 2: Reason
 ```
 
-## 📞 **Contact**
-<!-- How to reach you for questions about this PR -->
-- **GitHub:** @Ilnur72
-- **Email:** umirbayev2004@gmail.com
-
 ---
 
-**Thank you for contributing to UZ Pay SDK!** 🙏
+**Thank you for contributing to uz-payment-sdk.**

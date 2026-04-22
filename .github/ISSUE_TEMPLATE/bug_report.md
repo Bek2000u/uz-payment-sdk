@@ -35,7 +35,7 @@ Which payment system is affected?
 - **OS:** [e.g. macOS, Ubuntu, Windows]
 - **Node.js version:** [e.g. 18.17.0]
 - **uz-payment-sdk version:** [e.g. 1.0.1]
-- **Framework:** [e.g. NestJS 10.x, Express 4.x]
+- **Framework:** [e.g. Next.js, Express, Fastify, NestJS, none]
 
 ## 📋 **Additional Context**
 Add any other context about the problem here.
