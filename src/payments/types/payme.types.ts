@@ -1,4 +1,4 @@
-import type { MinorUnitAmount, PaymentResult } from './payment.types';
+import type { PaymentAmount, PaymentResult, ProviderAmount } from './payment.types';
 
 export interface PaymeAccountRef {
   order_id: string;
@@ -8,7 +8,7 @@ export interface PaymeReceipt {
   _id?: string;
   id?: string;
   state?: number;
-  amount?: MinorUnitAmount;
+  amount?: ProviderAmount;
   description?: string;
   detail?: Record<string, unknown> | null;
   account?: PaymeAccountRef | Array<{ name: string; value: string }>;
@@ -75,7 +75,7 @@ export interface PaymeReceiptPayer {
 
 export interface PaymeCreateReceiptRequest {
   orderId: string;
-  amount: MinorUnitAmount;
+  amount: PaymentAmount;
   detail?: Record<string, unknown>;
   description?: string;
 }

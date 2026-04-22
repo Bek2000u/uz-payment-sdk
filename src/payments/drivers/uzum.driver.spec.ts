@@ -41,7 +41,7 @@ describe('UzumDriver', () => {
 
     const result = await driver.createPayment({
       orderId: 'order-1',
-      amount: 150000,
+      amount: 1500,
       returnUrl: 'https://merchant.example/return',
       phoneNumber: '998901234567',
     });
@@ -76,6 +76,7 @@ describe('UzumDriver', () => {
     expect(result.transactionId).toBe('fb584fdb-48d4-4b50-a7da-f15b9a7ef111');
     expect(result.status).toBe('pending');
     expect(result.paymentUrl).toBe('https://checkout.uzum.test/pay/order-1');
+    expect(result.amount).toBe(1500);
   });
 
   it('checks payment via getOrderStatus first', async () => {
@@ -117,6 +118,7 @@ describe('UzumDriver', () => {
     expect(result.transactionId).toBe('fb584fdb-48d4-4b50-a7da-f15b9a7ef111');
     expect(result.orderId).toBe('order-1');
     expect(result.status).toBe('pending');
+    expect(result.amount).toBe(1500);
   });
 
   it('checks operation state when operation id is provided', async () => {
@@ -160,7 +162,7 @@ describe('UzumDriver', () => {
 
     const result = await driver.cancelPayment({
       transactionId: 'order-1',
-      amount: 150000,
+      amount: 1500,
       operationId: '00000000-0000-4000-8000-000000000001',
     });
 
@@ -179,5 +181,6 @@ describe('UzumDriver', () => {
     );
     expect(result.status).toBe('cancelled');
     expect(result.transactionId).toBe('refund-operation-1');
+    expect(result.amount).toBe(1500);
   });
 });

@@ -1,4 +1,4 @@
-import type { MinorUnitAmount } from '../payments/types/payment.types';
+import type { ProviderAmount } from '../payments/types/payment.types';
 
 export interface UzumMerchantFieldValue {
   value: string;
@@ -14,7 +14,7 @@ export interface UzumMerchantCheckRequest {
 
 export interface UzumMerchantCreateRequest extends UzumMerchantCheckRequest {
   transId: string;
-  amount: MinorUnitAmount;
+  amount: ProviderAmount;
 }
 
 export interface UzumMerchantConfirmRequest {
@@ -59,7 +59,7 @@ export interface UzumMerchantCreateResponse {
   transId: string;
   status: 'CREATED';
   transTime: number;
-  amount: MinorUnitAmount;
+  amount: ProviderAmount;
   data?: UzumMerchantDataMap;
 }
 
@@ -76,7 +76,7 @@ export interface UzumMerchantConfirmResponse {
   transId: string;
   status: 'CONFIRMED';
   confirmTime: number;
-  amount: MinorUnitAmount;
+  amount: ProviderAmount;
   data?: UzumMerchantDataMap;
 }
 
@@ -93,7 +93,7 @@ export interface UzumMerchantReverseResponse {
   transId: string;
   status: 'REVERSED';
   reverseTime: number;
-  amount: MinorUnitAmount;
+  amount: ProviderAmount;
   data?: UzumMerchantDataMap;
 }
 
@@ -112,7 +112,7 @@ export interface UzumMerchantStatusResponse {
   transTime: number;
   confirmTime?: number | null;
   reverseTime?: number | null;
-  amount?: MinorUnitAmount;
+  amount?: ProviderAmount;
   data?: UzumMerchantDataMap;
 }
 

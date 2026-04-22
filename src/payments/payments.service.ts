@@ -9,7 +9,7 @@ import { UzumDriver } from './drivers/uzum.driver';
 import {
   ClickGenerateInvoiceParams,
   GenerateInvoiceParams,
-  MinorUnitAmount,
+  PaymentAmount,
   PAYMENT_PROVIDERS,
   PaymentProviderId,
   PaymentResult,
@@ -564,7 +564,7 @@ export class PaymentsService {
     data: Record<string, unknown>,
   ): GenerateInvoiceParams {
     return {
-      amount: Number(data.amount) as MinorUnitAmount,
+      amount: Number(data.amount) as PaymentAmount,
       orderId: String(data.orderId),
       returnUrl: String(data.returnUrl),
     };

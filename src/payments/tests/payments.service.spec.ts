@@ -74,7 +74,7 @@ describe('PaymentsService', () => {
     const result = service.generateInvoiceUrl({
       provider: 'payme',
       orderId: 'order-123',
-      amount: 50000,
+      amount: 500,
       returnUrl: 'https://example.com/return',
     });
 
@@ -86,7 +86,7 @@ describe('PaymentsService', () => {
   it('generates click invoice URL via facade', () => {
     const result = service.generateInvoiceUrl('click', {
       orderId: 'order-123',
-      amount: 50000,
+      amount: 500,
       returnUrl: 'https://example.com/return',
       cardType: 'humo',
     });
@@ -100,7 +100,7 @@ describe('PaymentsService', () => {
     expect(() =>
       service.generateInvoiceUrl('uzum', {
         orderId: 'order-123',
-        amount: 50000,
+        amount: 500,
         returnUrl: 'https://example.com/return',
       }),
     ).toThrow('Invoice URL generation is not supported for provider: uzum');
@@ -110,7 +110,7 @@ describe('PaymentsService', () => {
     expect(() =>
       service.generateInvoiceUrl('payme', {
         orderId: 'order-123',
-        amount: 50000,
+        amount: 500,
       }),
     ).toThrow('Missing required payme invoice fields: returnUrl');
   });

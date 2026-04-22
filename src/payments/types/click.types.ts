@@ -1,4 +1,4 @@
-import type { MinorUnitAmount, PaymentResult } from './payment.types';
+import type { PaymentAmount, PaymentResult } from './payment.types';
 
 export interface ClickApiResponseBase {
   error_code: number;
@@ -7,7 +7,7 @@ export interface ClickApiResponseBase {
 
 export interface ClickCreateInvoiceRequest {
   orderId: string;
-  amount: MinorUnitAmount;
+  amount: PaymentAmount;
   phoneNumber: string;
 }
 
@@ -60,25 +60,25 @@ export interface ClickFiscalItem {
   Name: string;
   SPIC: string;
   PackageCode: string;
-  GoodPrice: number;
-  Price: number;
+  GoodPrice: PaymentAmount;
+  Price: PaymentAmount;
   Amount: number;
-  VAT: number;
+  VAT: PaymentAmount;
   VATPercent: number;
   Barcode?: string;
   Labels?: string[];
   Units?: number;
-  Discount?: number;
-  Other?: number;
+  Discount?: PaymentAmount;
+  Other?: PaymentAmount;
   CommissionInfo?: ClickFiscalCommissionInfo;
 }
 
 export interface ClickSubmitFiscalItemsRequest {
   paymentId: string;
   items: ClickFiscalItem[];
-  receivedEcash?: MinorUnitAmount;
-  receivedCash?: MinorUnitAmount;
-  receivedCard?: MinorUnitAmount;
+  receivedEcash?: PaymentAmount;
+  receivedCash?: PaymentAmount;
+  receivedCard?: PaymentAmount;
 }
 
 export interface ClickSubmitFiscalQrCodeRequest {

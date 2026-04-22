@@ -10,6 +10,7 @@ import {
 import { generateClickMerchantAuthHeader } from '../utils/signer.util';
 import { ClickError } from '../../errors/ClickError';
 import { generateClickInvoiceUrl } from '../utils/invoice.util';
+import { toProviderAmount } from '../utils/amount.util';
 import {
   ClickCancelPaymentRequest,
   ClickCreateInvoiceRequest,
@@ -110,7 +111,7 @@ export class ClickDriver implements PaymentDriver {
 
     const payload = {
       service_id: Number(this.config.serviceId),
-      amount,
+      amount: toProviderAmount(amount),
       phone_number: phoneNumber,
       merchant_trans_id: orderId,
     };
@@ -276,10 +277,21 @@ export class ClickDriver implements PaymentDriver {
       {
         service_id: Number(this.config.serviceId),
         payment_id: Number(data.paymentId),
-        items: data.items,
-        received_ecash: data.receivedEcash || 0,
-        received_cash: data.receivedCash || 0,
-        received_card: data.receivedCard || 0,
+        items: data.items.map((item) => ({
+          ...item,
+          GoodPrice: toProviderAmount(item.GoodPrice),
+          Price: toProviderAmount(item.Price),
+          VAT: toProviderAmount(item.VAT),
+          ...(item.Discount !== undefined
+            ? { Discount: toProviderAmount(item.Discount) }
+            : {}),
+          ...(item.Other !== undefined
+            ? { Other: toProviderAmount(item.Other) }
+            : {}),
+        })),
+        received_ecash: toProviderAmount(data.receivedEcash || 0),
+        received_cash: toProviderAmount(data.receivedCash || 0),
+        received_card: toProviderAmount(data.receivedCard || 0),
       },
       this.buildMerchantHeaders(timestampSec),
       'Click fiscal data submit items',
@@ -335,7 +347,7 @@ export class ClickDriver implements PaymentDriver {
     return generateClickInvoiceUrl({
       merchantId: this.config.merchantId,
       serviceId: this.config.serviceId,
-      amount: params.amount,
+      amount: toProviderAmount(params.amount),
       orderId: params.orderId,
       returnUrl: params.returnUrl,
       cardType: params.cardType,

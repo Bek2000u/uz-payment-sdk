@@ -4,6 +4,7 @@ import { PaymentDriver } from '../interfaces/payment-driver.interface';
 import { PaymentResult } from '../types/payment.types';
 import { postJson } from '../utils/http-client.util';
 import { buildPaymentResult, firstDefined } from '../utils/normalizers.util';
+import { fromProviderAmount, toProviderAmount } from '../utils/amount.util';
 import {
   UzumApiResponse,
   UzumGetOperationStateRequest,
@@ -67,7 +68,7 @@ export class UzumDriver implements PaymentDriver {
     const failureUrl = data.failureUrl || data.returnUrl;
 
     return {
-      amount: data.amount,
+      amount: toProviderAmount(data.amount),
       clientId: data.clientId || data.orderId,
       currency: Number(data.currencyCode || data.currency || 860),
       paymentDetails: data.paymentDetails || data.description || data.orderId,
@@ -160,7 +161,7 @@ export class UzumDriver implements PaymentDriver {
         provider: 'uzum',
         transactionId: orderResult.orderId,
         status: orderResult.status,
-        amount: orderResult.totalAmount,
+        amount: fromProviderAmount(orderResult.totalAmount),
         currency: 'UZS',
         orderId: orderResult.merchantOrderId,
         message: firstDefined(
@@ -235,7 +236,7 @@ export class UzumDriver implements PaymentDriver {
       `${this.config.apiUrl}/api/v1/acquiring/complete`,
       {
         orderId: data.orderId,
-        amount: data.amount,
+        amount: toProviderAmount(data.amount),
       },
       this.buildOperationHeaders(data.operationId),
       'Uzum complete request',
@@ -261,7 +262,7 @@ export class UzumDriver implements PaymentDriver {
       `${this.config.apiUrl}/api/v1/acquiring/refund`,
       {
         orderId: data.orderId,
-        amount: data.amount,
+        amount: toProviderAmount(data.amount),
       },
       this.buildOperationHeaders(data.operationId),
       'Uzum refund request',
@@ -287,7 +288,7 @@ export class UzumDriver implements PaymentDriver {
       `${this.config.apiUrl}/api/v1/acquiring/reverse`,
       {
         orderId: data.orderId,
-        amount: data.amount,
+        amount: toProviderAmount(data.amount),
       },
       this.buildOperationHeaders(data.operationId),
       'Uzum reverse request',

@@ -42,7 +42,7 @@ describe('PaymeDriver', () => {
 
     const result = await driver.createPayment({
       orderId: 'order-1',
-      amount: 500000,
+      amount: 5000,
       detail: { receipt_type: 0 },
     });
 
@@ -68,6 +68,7 @@ describe('PaymeDriver', () => {
 
     expect(result.transactionId).toBe('receipt-1');
     expect(result.status).toBe('pending');
+    expect(result.amount).toBe(5000);
   });
 
   it('checks receipt state via Subscribe API', async () => {
@@ -101,11 +102,12 @@ describe('PaymeDriver', () => {
     );
     expect(result.status).toBe('success');
     expect(result.orderId).toBe('order-1');
+    expect(result.amount).toBe(5000);
   });
 
   it('generates hosted checkout invoice url', () => {
     const url = driver.generateInvoiceUrl({
-      amount: 5000,
+      amount: 50,
       orderId: 'order-42',
       returnUrl: 'https://merchant.example/success',
     });

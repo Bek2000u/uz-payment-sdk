@@ -7,10 +7,21 @@ export const PAYMENT_PROVIDERS = [
 export type PaymentProviderId = (typeof PAYMENT_PROVIDERS)[number];
 
 /**
- * All provider amounts in this SDK are expressed in the smallest currency unit.
+ * Public SDK amount contract: amount is expressed in UZS.
+ * Example: 500 means 500 UZS.
+ */
+export type PaymentAmount = number;
+
+/**
+ * Raw provider amount contract: amount is expressed in the smallest currency unit.
  * For UZS this means tiyin.
  */
-export type MinorUnitAmount = number;
+export type ProviderAmount = number;
+
+/**
+ * @deprecated Use PaymentAmount for SDK-facing values or ProviderAmount for raw provider values.
+ */
+export type MinorUnitAmount = PaymentAmount;
 
 export type NormalizedPaymentStatus =
   | 'pending'
@@ -30,7 +41,7 @@ export interface PaymentResult<
   transactionId: string;
   status: NormalizedPaymentStatus;
   paymentUrl?: string;
-  amount?: MinorUnitAmount;
+  amount?: PaymentAmount;
   currency?: string;
   orderId?: string;
   message?: string;
@@ -47,7 +58,7 @@ export interface ProviderInfo {
 }
 
 export interface GenerateInvoiceParams {
-  amount: MinorUnitAmount;
+  amount: PaymentAmount;
   orderId: string;
   returnUrl: string;
 }

@@ -26,14 +26,14 @@ const payments = new PaymentsService({
 async function main() {
   const payment = await payments.create('click', {
     orderId: `order-${Date.now()}`,
-    amount: 50000,
+    amount: 500,
     phoneNumber: '998901234567',
     description: 'Test payment',
   });
 
   const hostedInvoiceUrl = payments.generateInvoiceUrl('payme', {
     orderId: 'order-123',
-    amount: 50000,
+    amount: 500,
     returnUrl: 'https://merchant.example/payments/return',
   });
 

@@ -40,6 +40,8 @@ export type {
   ClickGenerateInvoiceParams,
   GenerateInvoiceParams,
   MinorUnitAmount,
+  PaymentAmount,
+  ProviderAmount,
   PaymentProviderId,
   NormalizedPaymentStatus,
   PaymentResult as PaymentResponse,

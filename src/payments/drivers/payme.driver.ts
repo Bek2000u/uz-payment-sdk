@@ -12,6 +12,7 @@ import {
 } from '../utils/signer.util';
 import { PaymeError } from '../../errors/PaymeError';
 import { generatePaymeInvoiceUrl } from '../utils/invoice.util';
+import { fromProviderAmount, toProviderAmount } from '../utils/amount.util';
 import {
   PaymeCheckCardRequest,
   PaymeCreateCardRequest,
@@ -70,7 +71,7 @@ export class PaymeDriver implements PaymentDriver {
   ): Promise<PaymeJsonRpcSuccess<PaymeReceiptEnvelope>> {
     const { orderId, amount, detail, description } = data;
     return this.call<PaymeReceiptEnvelope>('receipts.create', {
-      amount,
+      amount: toProviderAmount(amount),
       account: {
         order_id: orderId,
       },
@@ -122,7 +123,7 @@ export class PaymeDriver implements PaymentDriver {
       transactionId,
       status: firstDefined(response?.result?.state, response?.result?.receipt?.state),
       orderId: this.extractOrderId(response?.result?.receipt),
-      amount: response?.result?.receipt?.amount,
+      amount: fromProviderAmount(response?.result?.receipt?.amount),
       raw: response,
     });
   }
@@ -147,7 +148,7 @@ export class PaymeDriver implements PaymentDriver {
       provider: 'payme',
       transactionId: firstDefined(receipt?._id, receipt?.id, data.transactionId) || data.transactionId,
       status: firstDefined(receipt?.state, 21),
-      amount: receipt?.amount,
+      amount: fromProviderAmount(receipt?.amount),
       orderId: this.extractOrderId(receipt),
       message: receipt?.description,
       raw: response,
@@ -179,7 +180,7 @@ export class PaymeDriver implements PaymentDriver {
       transactionId:
         firstDefined(receipt?._id, receipt?.id, data.transactionId) || data.transactionId,
       status: receipt?.state,
-      amount: receipt?.amount,
+      amount: fromProviderAmount(receipt?.amount),
       orderId: this.extractOrderId(receipt),
       message: receipt?.description,
       raw: response,
@@ -272,7 +273,7 @@ export class PaymeDriver implements PaymentDriver {
 
     return generatePaymeInvoiceUrl({
       merchantId: config.merchantId,
-      amount: params.amount,
+      amount: toProviderAmount(params.amount),
       orderId: params.orderId,
       returnUrl: params.returnUrl,
       apiUrl: config.apiUrl,

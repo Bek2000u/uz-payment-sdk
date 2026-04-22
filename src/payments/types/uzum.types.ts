@@ -1,4 +1,4 @@
-import type { MinorUnitAmount, PaymentResult } from './payment.types';
+import type { PaymentAmount, PaymentResult, ProviderAmount } from './payment.types';
 
 export interface UzumApiResponse<TResult> {
   errorCode: number;
@@ -17,7 +17,7 @@ export interface UzumOperation {
 
 export interface UzumRegisterPaymentRequest {
   orderId: string;
-  amount: MinorUnitAmount;
+  amount: PaymentAmount;
   returnUrl?: string;
   successUrl?: string;
   failureUrl?: string;
@@ -47,7 +47,7 @@ export interface UzumGetOrderStatusRequest {
 
 export interface UzumGetOperationStateRequest {
   operationId: string;
-  amount?: MinorUnitAmount;
+  amount?: PaymentAmount;
   orderId?: string;
 }
 
@@ -55,11 +55,11 @@ export interface UzumOrderStatusResult {
   orderId: string;
   status: string;
   merchantOrderId: string;
-  amount: MinorUnitAmount;
-  totalAmount: MinorUnitAmount;
-  completedAmount: MinorUnitAmount;
-  refundedAmount: MinorUnitAmount;
-  reversedAmount: MinorUnitAmount;
+  amount: ProviderAmount;
+  totalAmount: ProviderAmount;
+  completedAmount: ProviderAmount;
+  refundedAmount: ProviderAmount;
+  reversedAmount: ProviderAmount;
   operations: UzumOperation[];
   bindingId?: string;
   actionCode?: number;
@@ -72,7 +72,7 @@ export interface UzumOperationStateResult {
 
 export interface UzumOperationCommand {
   orderId: string;
-  amount: MinorUnitAmount;
+  amount: PaymentAmount;
   operationId?: string;
 }
 
@@ -127,7 +127,7 @@ export interface UzumReceiptItem {
   status?: string;
   qrCodeUrl?: string;
   type?: string;
-  totalAmount?: MinorUnitAmount;
+  totalAmount?: ProviderAmount;
 }
 
 export interface UzumGetReceiptsResult {

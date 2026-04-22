@@ -40,7 +40,7 @@ describe('ClickDriver', () => {
 
     const result = await driver.createPayment({
       orderId: 'order-1',
-      amount: 125000,
+      amount: 1250,
       phoneNumber: '998901234567',
     });
 
@@ -69,6 +69,7 @@ describe('ClickDriver', () => {
 
     expect(result.transactionId).toBe('987654');
     expect(result.status).toBe('pending');
+    expect(result.amount).toBe(1250);
   });
 
   it('checks payment status via official Merchant API contract', async () => {
@@ -147,7 +148,7 @@ describe('ClickDriver', () => {
 
   it('generates hosted click invoice url', () => {
     const url = driver.generateInvoiceUrl({
-      amount: 7500,
+      amount: 75,
       orderId: 'order-77',
       returnUrl: 'https://merchant.example/return',
       cardType: 'uzcard',
