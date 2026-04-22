@@ -10,6 +10,7 @@ TypeScript SDK для интеграции с `payme`, `click` и `uzum`.
 - [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/providers.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/providers.md)
 - [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/webhooks.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/webhooks.md)
 - [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/testing.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/testing.md)
+- [/mnt/data/projects/business/uz-pay-sdk/docs/sdk/releasing.md](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/releasing.md)
 
 ## Install
 
@@ -111,6 +112,14 @@ const invoiceUrl = payments.generateInvoiceUrl({
 - `PaymeClient`
 - `ClickClient`
 - `UzumClient`
+
+Для server-side интеграции также доступны helper-ы:
+
+- `createPaymentsServiceFromEnv`
+- `createWebhookServiceFromEnv`
+- `createPaymentSdkServerServices`
+- `parseProviderWebhookRequest`
+- `processProviderWebhookRequest`
 
 ## Support Matrix
 
@@ -218,6 +227,7 @@ helper-ы для `Uzum Merchant API` повторяют официальный w
 - `src/providers/uzum` — low-level Uzum client
 - `src/payments` — high-level facade и нормализация результатов
 - `src/webhooks` — webhook parsing, normalization и Uzum merchant toolkit
+- `src/server` — server-only helpers для Next.js/fetch runtimes
 - `docs/examples` — минимальные примеры интеграции
 
 ## Scripts

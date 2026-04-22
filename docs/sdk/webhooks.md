@@ -15,6 +15,8 @@
 
 - `parseClickWebhook(...)`
 - `parsePaymeWebhook(...)`
+- `parseProviderWebhookRequest(...)`
+- `processProviderWebhookRequest(...)`
 
 Эти методы возвращают канонический `WebhookPayload`, который уже можно безопасно подавать дальше в Sim или внутренний event bus.
 

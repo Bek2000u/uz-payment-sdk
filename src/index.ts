@@ -6,6 +6,17 @@ export { SDK_RESULT_CONTRACT, SDK_SUPPORT_POLICY } from './core/contracts';
 export { PaymeClient } from './providers/payme';
 export { ClickClient } from './providers/click';
 export { UzumClient } from './providers/uzum';
+export {
+  createPaymentSdkServerServices,
+  createPaymentsServiceFromEnv,
+  createWebhookServiceFromEnv,
+  assertServerOnly,
+} from './server/services';
+export {
+  readWebhookRequestBody,
+  parseProviderWebhookRequest,
+  processProviderWebhookRequest,
+} from './server/request';
 export { PaymentConfigService } from './config/payment-config.service';
 export { MemoryCacheStore } from './cache/cache-store';
 export { noopLogger } from './logger/sdk-logger';
@@ -42,6 +53,13 @@ export type {
   SdkSupportPolicy,
   SdkSupportSurface,
 } from './core/contracts';
+export type { PaymentSdkServerServices } from './server/services';
+export type {
+  ParseWebhookRequestOptions,
+  ProcessWebhookRequestOptions,
+  RequestHeadersLike,
+  WebhookRequestLike,
+} from './server/request';
 export type {
   ClickGenerateInvoiceParams,
   GenerateInvoiceParams,

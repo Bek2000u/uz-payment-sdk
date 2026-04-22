@@ -13,6 +13,12 @@ SDK лучше использовать только на сервере:
 3. Держать merchant secrets только в server env.
 4. webhook endpoints принимать отдельно от create/check/cancel routes.
 
+Если не хочется руками создавать сервисы, можно использовать:
+
+- `createPaymentsServiceFromEnv()`
+- `createWebhookServiceFromEnv()`
+- `createPaymentSdkServerServices()`
+
 ## Minimal Route Handler
 
 ```ts
@@ -42,3 +48,28 @@ export async function POST() {
 ```
 
 Готовый пример есть в [/mnt/data/projects/business/uz-pay-sdk/docs/examples/next-route.ts](/mnt/data/projects/business/uz-pay-sdk/docs/examples/next-route.ts).
+
+## Webhook Route
+
+Для raw provider callback можно использовать `processProviderWebhookRequest()`:
+
+```ts
+import {
+  createWebhookServiceFromEnv,
+  processProviderWebhookRequest,
+} from 'uz-payment-sdk';
+
+const webhooks = createWebhookServiceFromEnv();
+
+export async function POST(request: Request) {
+  const payload = await processProviderWebhookRequest({
+    provider: 'payme',
+    request,
+    webhookService: webhooks,
+  });
+
+  return Response.json({ ok: true, payload });
+}
+```
+
+Готовый пример лежит в [/mnt/data/projects/business/uz-pay-sdk/docs/examples/next-webhook-route.ts](/mnt/data/projects/business/uz-pay-sdk/docs/examples/next-webhook-route.ts).

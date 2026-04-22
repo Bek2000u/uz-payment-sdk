@@ -16,7 +16,9 @@ npm run build
 - keep public SDK API framework-agnostic
 - keep supported providers limited to `payme`, `click`, `uzum`
 - update `README.md` when changing public API or money contract
+- update `CHANGELOG.md` for user-visible changes
 - add or update tests for provider-specific behaviour
+- run `npm run test:matrix`
 - run `npm run release:smoke`
 
 ## Scope

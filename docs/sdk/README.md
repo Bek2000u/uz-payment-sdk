@@ -7,6 +7,7 @@
 - [Provider Guides](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/providers.md)
 - [Webhook Guide](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/webhooks.md)
 - [Testing Matrix](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/testing.md)
+- [Releasing](/mnt/data/projects/business/uz-pay-sdk/docs/sdk/releasing.md)
 
 Официальные исходные материалы провайдеров лежат отдельно:
 
